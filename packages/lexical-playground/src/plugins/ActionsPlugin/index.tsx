@@ -52,6 +52,7 @@ import {
   useState,
 } from 'react';
 
+import type {EditorPlugins} from '../../Editor';
 import {INITIAL_SETTINGS} from '../../appSettings';
 import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
@@ -117,10 +118,13 @@ type EditorMode = 'wysiwyg' | 'markdown' | 'html';
 export default function ActionsPlugin({
   shouldPreserveNewLinesInMarkdown,
   useCollabV2,
+  plugins = {},
 }: {
   shouldPreserveNewLinesInMarkdown: boolean;
   useCollabV2: boolean;
+  plugins?: EditorPlugins;
 }): JSX.Element {
+  const {stt = false, collaboration = false} = plugins;
   const [editor] = useLexicalComposerContext();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
@@ -314,7 +318,7 @@ export default function ActionsPlugin({
 
   return (
     <div className="actions">
-      {SUPPORT_SPEECH_RECOGNITION && (
+      {stt && SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
             editor.dispatchCommand(SPEECH_TO_TEXT_COMMAND, !isSpeechToText);
@@ -413,7 +417,7 @@ export default function ActionsPlugin({
         aria-label={isHtml ? 'Convert from html' : 'Convert to html'}>
         <i className="html" />
       </button>
-      {isCollabActive && (
+      {collaboration && isCollabActive && (
         <>
           <button
             className="action-button connect"

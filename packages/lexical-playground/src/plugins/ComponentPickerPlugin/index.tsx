@@ -35,14 +35,14 @@ import {
 } from 'lexical';
 import {useCallback, useMemo, useState} from 'react';
 
+import type {EditorPlugins} from '../../Editor';
 import useModal from '../../hooks/useModal';
-import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
-import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
+import {InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {InsertPollDialog} from '../PollPlugin';
@@ -145,7 +145,18 @@ export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
 
 export type ShowModal = ReturnType<typeof useModal>[1];
 
-export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
+export function getBaseOptions(
+  editor: LexicalEditor,
+  showModal: ShowModal,
+  plugins: EditorPlugins = {},
+) {
+  const {
+    excalidraw = false,
+    poll = false,
+    equations = false,
+    layout = false,
+    embed = false,
+  } = plugins;
   return [
     new ComponentPickerOption('Paragraph', {
       icon: <i className="icon paragraph" />,
@@ -240,29 +251,39 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       keywords: ['page break', 'divider'],
       onSelect: () => editor.dispatchCommand(INSERT_PAGE_BREAK, undefined),
     }),
-    new ComponentPickerOption('Excalidraw', {
-      icon: <i className="icon diagram-2" />,
-      keywords: ['excalidraw', 'diagram', 'drawing'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND, undefined),
-    }),
-    new ComponentPickerOption('Poll', {
-      icon: <i className="icon poll" />,
-      keywords: ['poll', 'vote'],
-      onSelect: () =>
-        showModal('Insert Poll', (onClose) => (
-          <InsertPollDialog activeEditor={editor} onClose={onClose} />
-        )),
-    }),
-    ...EmbedConfigs.map(
-      (embedConfig) =>
-        new ComponentPickerOption(`Embed ${embedConfig.contentName}`, {
-          icon: embedConfig.icon,
-          keywords: [...embedConfig.keywords, 'embed'],
-          onSelect: () =>
-            editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
-        }),
-    ),
+    ...(excalidraw
+      ? [
+          new ComponentPickerOption('Excalidraw', {
+            icon: <i className="icon diagram-2" />,
+            keywords: ['excalidraw', 'diagram', 'drawing'],
+            onSelect: () =>
+              editor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND, undefined),
+          }),
+        ]
+      : []),
+    ...(poll
+      ? [
+          new ComponentPickerOption('Poll', {
+            icon: <i className="icon poll" />,
+            keywords: ['poll', 'vote'],
+            onSelect: () =>
+              showModal('Insert Poll', (onClose) => (
+                <InsertPollDialog activeEditor={editor} onClose={onClose} />
+              )),
+          }),
+        ]
+      : []),
+    ...(embed
+      ? EmbedConfigs.map(
+          (embedConfig) =>
+            new ComponentPickerOption(`Embed ${embedConfig.contentName}`, {
+              icon: embedConfig.icon,
+              keywords: [...embedConfig.keywords, 'embed'],
+              onSelect: () =>
+                editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
+            }),
+        )
+      : []),
     new ComponentPickerOption('Date', {
       icon: <i className="icon calendar" />,
       keywords: ['date', 'calendar', 'time'],
@@ -301,23 +322,18 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
         editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
       },
     }),
-    new ComponentPickerOption('Equation', {
-      icon: <i className="icon equation" />,
-      keywords: ['equation', 'latex', 'math'],
-      onSelect: () =>
-        showModal('Insert Equation', (onClose) => (
-          <InsertEquationDialog activeEditor={editor} onClose={onClose} />
-        )),
-    }),
-    new ComponentPickerOption('GIF', {
-      icon: <i className="icon gif" />,
-      keywords: ['gif', 'animate', 'image', 'file'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-          altText: 'Cat typing on a laptop',
-          src: catTypingGif,
-        }),
-    }),
+    ...(equations
+      ? [
+          new ComponentPickerOption('Equation', {
+            icon: <i className="icon equation" />,
+            keywords: ['equation', 'latex', 'math'],
+            onSelect: () =>
+              showModal('Insert Equation', (onClose) => (
+                <InsertEquationDialog activeEditor={editor} onClose={onClose} />
+              )),
+          }),
+        ]
+      : []),
     new ComponentPickerOption('Image', {
       icon: <i className="icon image" />,
       keywords: ['image', 'photo', 'picture', 'file'],
@@ -332,14 +348,18 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       onSelect: () =>
         editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Columns Layout', {
-      icon: <i className="icon columns" />,
-      keywords: ['columns', 'layout', 'grid'],
-      onSelect: () =>
-        showModal('Insert Columns Layout', (onClose) => (
-          <InsertLayoutDialog activeEditor={editor} onClose={onClose} />
-        )),
-    }),
+    ...(layout
+      ? [
+          new ComponentPickerOption('Columns Layout', {
+            icon: <i className="icon columns" />,
+            keywords: ['columns', 'layout', 'grid'],
+            onSelect: () =>
+              showModal('Insert Columns Layout', (onClose) => (
+                <InsertLayoutDialog activeEditor={editor} onClose={onClose} />
+              )),
+          }),
+        ]
+      : []),
     ...(['left', 'center', 'right', 'justify'] as const).map(
       (alignment) =>
         new ComponentPickerOption(`Align ${alignment}`, {
@@ -352,7 +372,11 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
   ];
 }
 
-export default function ComponentPickerMenuPlugin(): JSX.Element {
+export default function ComponentPickerMenuPlugin({
+  plugins = {},
+}: {
+  plugins?: EditorPlugins;
+} = {}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [modal, showModal] = useModal();
   const [queryString, setQueryString] = useState<string | null>(null);
@@ -363,7 +387,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
   });
 
   const options = useMemo(() => {
-    const baseOptions = getBaseOptions(editor, showModal);
+    const baseOptions = getBaseOptions(editor, showModal, plugins);
 
     if (!queryString) {
       return baseOptions;
@@ -379,7 +403,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
           option.keywords.some((keyword) => regex.test(keyword)),
       ),
     ];
-  }, [editor, queryString, showModal]);
+  }, [editor, queryString, showModal, plugins]);
 
   const onSelectOption = useCallback(
     (

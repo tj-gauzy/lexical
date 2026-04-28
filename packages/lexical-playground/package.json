@@ -8,7 +8,9 @@
     "build-dev": "vite build",
     "build-prod": "vite build --mode production",
     "build-vercel": "(cd ../../ && node ./scripts/build.mjs) && pnpm run build-dev",
-    "preview": "vite preview --port 4000 --host"
+    "preview": "vite preview --port 4000 --host",
+    "build:lib": "vite build --config vite.lib.config.ts --mode development",
+    "build:lib-prod": "vite build --config vite.lib.config.ts --mode production"
   },
   "dependencies": {
     "@atlaskit/drag-and-drop-indicator": "^0.11.1",
@@ -21,6 +23,9 @@
     "@lexical/code-shiki": "workspace:*",
     "@lexical/file": "workspace:*",
     "@lexical/hashtag": "workspace:*",
+    "@lexical/headless": "workspace:*",
+    "@lexical/html": "workspace:*",
+    "@lexical/markdown": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/mark": "workspace:*",
@@ -45,6 +50,7 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.27.1",
+    "@babel/plugin-transform-unicode-sets-regex": "^7.27.1",
     "@babel/preset-react": "^7.28.5",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^7.0.0",

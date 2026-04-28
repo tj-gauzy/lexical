@@ -69,13 +69,13 @@ import {
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
 
+import type {EditorPlugins} from '../../Editor';
 import {useSettings} from '../../context/SettingsContext';
 import {
   blockTypeToBlockName,
   useToolbarState,
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
-import catTypingGif from '../../images/cat-typing.gif';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
@@ -88,13 +88,10 @@ import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
-  INSERT_IMAGE_COMMAND,
   InsertImageDialog,
-  InsertImagePayload,
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
-import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {InsertTableDialog} from '../TablePlugin';
@@ -564,12 +561,22 @@ export default function ToolbarPlugin({
   activeEditor,
   setActiveEditor,
   setIsLinkEditMode,
+  plugins = {},
 }: {
   editor: LexicalEditor;
   activeEditor: LexicalEditor;
   setActiveEditor: Dispatch<LexicalEditor>;
   setIsLinkEditMode: Dispatch<boolean>;
+  plugins?: EditorPlugins;
 }): JSX.Element {
+  const {
+    excalidraw = false,
+    poll = false,
+    layout = true,
+    equations = false,
+    embed = false,
+    sticky = false
+  } = plugins;
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
   );
@@ -914,9 +921,6 @@ export default function ToolbarPlugin({
     },
     [activeEditor, selectedElementKey],
   );
-  const insertGifOnClick = (payload: InsertImagePayload) => {
-    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
-  };
 
   const canViewerSeeInsertDropdown = !toolbarState.isImageCaption;
   const canViewerSeeInsertCodeButton = !toolbarState.isImageCaption;
@@ -1260,7 +1264,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CLEAR_FORMATTING}</span>
             </DropDownItem>
           </DropDown>
-          <ExtensionComponent lexical:extension={PagesReactExtension} />
+          {/*<ExtensionComponent lexical:extension={PagesReactExtension} />*/}
           {canViewerSeeInsertDropdown && (
             <>
               <Divider />
@@ -1297,25 +1301,16 @@ export default function ToolbarPlugin({
                   <i className="icon image" />
                   <span className="text">Image</span>
                 </DropDownItem>
-                <DropDownItem
-                  onClick={() =>
-                    insertGifOnClick({
-                      altText: 'Cat typing on a laptop',
-                      src: catTypingGif,
-                    })
-                  }
-                  className="item">
-                  <i className="icon gif" />
-                  <span className="text">GIF</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() =>
-                    dispatchToolbarCommand(INSERT_EXCALIDRAW_COMMAND)
-                  }
-                  className="item">
-                  <i className="icon diagram-2" />
-                  <span className="text">Excalidraw</span>
-                </DropDownItem>
+                {excalidraw && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_EXCALIDRAW_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon diagram-2" />
+                    <span className="text">Excalidraw</span>
+                  </DropDownItem>
+                )}
                 <DropDownItem
                   onClick={() => {
                     showModal('Insert Table', (onClose) => (
@@ -1329,59 +1324,68 @@ export default function ToolbarPlugin({
                   <i className="icon table" />
                   <span className="text">Table</span>
                 </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Poll', (onClose) => (
-                      <InsertPollDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon poll" />
-                  <span className="text">Poll</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Columns Layout', (onClose) => (
-                      <InsertLayoutDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon columns" />
-                  <span className="text">Columns Layout</span>
-                </DropDownItem>
-
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Equation', (onClose) => (
-                      <InsertEquationDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon equation" />
-                  <span className="text">Equation</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    editor.update(() => {
-                      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
-                      const root = $getRoot();
-                      const stickyNode = $createStickyNode(0, 0);
-                      root.append(stickyNode);
-                    });
-                  }}
-                  className="item">
-                  <i className="icon sticky" />
-                  <span className="text">Sticky Note</span>
-                </DropDownItem>
+                {poll && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Poll', (onClose) => (
+                        <InsertPollDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon poll" />
+                    <span className="text">Poll</span>
+                  </DropDownItem>
+                )}
+                {layout && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Columns Layout', (onClose) => (
+                        <InsertLayoutDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon columns" />
+                    <span className="text">Columns Layout</span>
+                  </DropDownItem>
+                )}
+                {equations && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Equation', (onClose) => (
+                        <InsertEquationDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon equation" />
+                    <span className="text">Equation</span>
+                  </DropDownItem>
+                )}
+                  {
+                      sticky && (
+                          <DropDownItem
+                              onClick={() => {
+                                  editor.update(() => {
+                                      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+                                      const root = $getRoot();
+                                      const stickyNode = $createStickyNode(0, 0);
+                                      root.append(stickyNode);
+                                  });
+                              }}
+                              className="item">
+                              <i className="icon sticky" />
+                              <span className="text">Sticky Note</span>
+                          </DropDownItem>
+                      )
+                  }
                 <DropDownItem
                   onClick={() =>
                     dispatchToolbarCommand(INSERT_COLLAPSIBLE_COMMAND)
@@ -1400,20 +1404,21 @@ export default function ToolbarPlugin({
                   <i className="icon calendar" />
                   <span className="text">Date</span>
                 </DropDownItem>
-                {EmbedConfigs.map((embedConfig) => (
-                  <DropDownItem
-                    key={embedConfig.type}
-                    onClick={() =>
-                      dispatchToolbarCommand(
-                        INSERT_EMBED_COMMAND,
-                        embedConfig.type,
-                      )
-                    }
-                    className="item">
-                    {embedConfig.icon}
-                    <span className="text">{embedConfig.contentName}</span>
-                  </DropDownItem>
-                ))}
+                {embed &&
+                  EmbedConfigs.map((embedConfig) => (
+                    <DropDownItem
+                      key={embedConfig.type}
+                      onClick={() =>
+                        dispatchToolbarCommand(
+                          INSERT_EMBED_COMMAND,
+                          embedConfig.type,
+                        )
+                      }
+                      className="item">
+                      {embedConfig.icon}
+                      <span className="text">{embedConfig.contentName}</span>
+                    </DropDownItem>
+                  ))}
               </DropDown>
             </>
           )}

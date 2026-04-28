@@ -239,7 +239,7 @@ export default function DraggableBlockPlugin({
                 left: pickerPosition.left,
                 position: 'absolute',
                 top: pickerPosition.top,
-                zIndex: 10,
+                zIndex: 9999,
               }}>
               <input
                 className="component-picker-search"

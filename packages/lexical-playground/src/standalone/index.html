@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lexical Editor — Standalone Demo</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      background: #f5f5f5;
+      color: #1a1a1a;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    header span { opacity: .6; font-weight: 400; font-size: 13px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr 300px;
+      gap: 0;
+      height: calc(100vh - 50px);
+    }
+
+    /* ── Left panel: controls ── */
+    .panel {
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel h3 {
+      margin: 0 0 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #888;
+    }
+
+    .section {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    button {
+      padding: 7px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      text-align: left;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    button:hover { background: #f0f4ff; border-color: #99b; }
+    button.primary { background: #1a1a2e; color: #fff; border-color: transparent; }
+    button.primary:hover { background: #2d2d50; }
+    button.danger { border-color: #f5a0a0; color: #c00; }
+    button.danger:hover { background: #fff0f0; }
+
+    label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
+
+    textarea {
+      width: 100%;
+      resize: vertical;
+      padding: 8px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      min-height: 80px;
+    }
+
+    /* ── Center: editor mount point ── */
+    .editor-wrap {
+      overflow: auto;
+      padding: 24px;
+    }
+
+    #editor-container {
+      min-height: 400px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    /* ── Right panel: output log ── */
+    .log-panel {
+      background: #1a1a2e;
+      color: #d4e0ff;
+      padding: 16px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 11px;
+    }
+
+    .log-panel h3 {
+      margin: 0 0 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #6688cc;
+    }
+
+    .log-entry {
+      margin-bottom: 12px;
+      border-bottom: 1px solid #2a2a4a;
+      padding-bottom: 10px;
+    }
+
+    .log-entry .ts { color: #5566aa; font-size: 10px; margin-bottom: 4px; }
+    .log-entry .html-preview { color: #a0d0a0; word-break: break-all; }
+    .log-entry .state-preview { color: #88aadd; word-break: break-all; margin-top: 4px; }
+
+    .status-bar {
+      padding: 4px 12px;
+      background: #eef;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #446;
+    }
+    .status-bar.ok { background: #efe; color: #264; }
+    .status-bar.err { background: #fee; color: #622; }
+  </style>
+</head>
+<body>
+
+<header>
+  Lexical Editor <span>standalone demo · window.LexicalEditor.mountLexicalEditor</span>
+</header>
+
+<div class="layout">
+
+  <!-- Left: controls -->
+  <div class="panel">
+
+    <div class="section">
+      <h3>生命周期</h3>
+      <div id="status" class="status-bar">未挂载</div>
+      <button class="primary" id="btn-mount">挂载编辑器</button>
+      <button class="danger" id="btn-destroy">销毁编辑器</button>
+    </div>
+
+    <div class="section">
+      <h3>Config · components</h3>
+      <label><input type="checkbox" id="chk-richtext" checked /> isRichText</label>
+      <label><input type="checkbox" id="chk-treeview" /> showTreeView</label>
+      <label><input type="checkbox" id="chk-toc" /> showTableOfContents</label>
+      <label><input type="checkbox" id="chk-autocomplete" /> isAutocomplete</label>
+      <label><input type="checkbox" id="chk-spellcheck" /> isCodeHighlighted (默认开)</label>
+      <label><input type="checkbox" id="chk-settings" /> showSettingsPanel</label>
+      <button id="btn-update">应用配置 (update)</button>
+    </div>
+
+    <div class="section">
+      <h3>setContent</h3>
+      <textarea id="ta-state" placeholder='粘贴 EditorState JSON（由 onChange 第二个参数输出）'></textarea>
+      <button id="btn-set-content">setContent</button>
+    </div>
+
+  </div>
+
+  <!-- Center: editor -->
+  <div class="editor-wrap">
+    <div id="editor-container"></div>
+  </div>
+
+  <!-- Right: onChange log -->
+  <div class="log-panel">
+    <h3>onChange 输出</h3>
+    <div id="log"></div>
+  </div>
+
+</div>
+
+<script src="./lexical-editor.umd.js"></script>
+<script>
+(function () {
+  var editorInstance = null;
+
+  var container   = document.getElementById('editor-container');
+  var statusEl    = document.getElementById('status');
+  var logEl       = document.getElementById('log');
+
+  var chkRichText   = document.getElementById('chk-richtext');
+  var chkTreeView   = document.getElementById('chk-treeview');
+  var chkToc        = document.getElementById('chk-toc');
+  var chkAutoComp   = document.getElementById('chk-autocomplete');
+  var chkCodeHl     = document.getElementById('chk-spellcheck');
+  var chkSettings   = document.getElementById('chk-settings');
+
+  function getConfig() {
+    return {
+      components: {
+        isRichText:        chkRichText.checked,
+        showTreeView:      chkTreeView.checked,
+        showTableOfContents: chkToc.checked,
+        isAutocomplete:    chkAutoComp.checked,
+        isCodeHighlighted: chkCodeHl.checked,
+      },
+      showSettingsPanel: chkSettings.checked,
+    };
+  }
+
+  function setStatus(msg, ok) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status-bar ' + (ok === false ? 'err' : ok === true ? 'ok' : '');
+  }
+
+  function addLog(editor) {
+    const state = JSON.stringify(editor.getEditorState());
+
+    const html = window.LexicalEditor.toHTML(editor);
+
+    var entry = document.createElement('div');
+    entry.className = 'log-entry';
+
+    var ts = document.createElement('div');
+    ts.className = 'ts';
+    ts.textContent = new Date().toLocaleTimeString();
+
+    var htmlDiv = document.createElement('div');
+    htmlDiv.className = 'html-preview';
+    htmlDiv.textContent = 'HTML: ' + html.slice(0, 120) + (html.length > 120 ? '…' : '');
+
+    var stateDiv = document.createElement('div');
+    stateDiv.className = 'state-preview';
+    stateDiv.textContent = 'STATE: ' + state.slice(0, 80) + (state.length > 80 ? '…' : '');
+
+    entry.appendChild(ts);
+    entry.appendChild(htmlDiv);
+    entry.appendChild(stateDiv);
+    logEl.insertBefore(entry, logEl.firstChild);
+
+    // Keep at most 20 entries
+    while (logEl.children.length > 20) {
+      logEl.removeChild(logEl.lastChild);
+    }
+  }
+
+  document.getElementById('btn-mount').addEventListener('click', function () {
+    if (editorInstance) {
+      setStatus('已挂载，请先销毁再重新挂载', false);
+      return;
+    }
+    try {
+      editorInstance = window.LexicalEditor.mountLexicalEditor(
+        container,
+        getConfig(),
+        {
+          onChange: function (editor) {
+            addLog(editor);
+          },
+        }
+      );
+      setStatus('已挂载', true);
+    } catch (e) {
+      setStatus('挂载失败: ' + e.message, false);
+      console.error(e);
+    }
+  });
+
+  document.getElementById('btn-destroy').addEventListener('click', function () {
+    if (!editorInstance) { setStatus('未挂载', false); return; }
+    editorInstance.destroy();
+    editorInstance = null;
+    container.innerHTML = '';
+    setStatus('已销毁');
+  });
+
+  document.getElementById('btn-update').addEventListener('click', function () {
+    if (!editorInstance) { setStatus('请先挂载编辑器', false); return; }
+    editorInstance.update(getConfig());
+    setStatus('已更新配置', true);
+  });
+
+  document.getElementById('btn-set-content').addEventListener('click', function () {
+    if (!editorInstance) { setStatus('请先挂载编辑器', false); return; }
+    var json = document.getElementById('ta-state').value.trim();
+    if (!json) { setStatus('请填写 EditorState JSON', false); return; }
+    try {
+      editorInstance.setContent(json);
+      setStatus('内容已设置', true);
+    } catch (e) {
+      setStatus('setContent 失败: ' + e.message, false);
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -6,48 +6,6 @@
  *
  */
 
-@import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
-
-body {
-  margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    '.SFNSText-Regular',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: #eee;
-  padding: 0 20px;
-}
-
-header {
-  max-width: 580px;
-  margin: auto;
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-header a {
-  max-width: 220px;
-  margin: 20px 0 0 0;
-  display: block;
-}
-
-header img {
-  display: block;
-  height: 100%;
-  width: 100%;
-}
-
-header h1 {
-  text-align: left;
-  color: #333;
-  display: inline-block;
-  margin: 20px 0 0 0;
-}
 
 .editor-shell {
   margin: 20px auto;
@@ -1160,7 +1118,7 @@ i.page-setup,
 .editor-shell .editor-image .image-edit-button {
   border: 1px solid rgba(0, 0, 0, 0.3);
   border-radius: 5px;
-  background-image: url(/src/images/icons/pencil-fill.svg);
+  background-image: url(images/icons/pencil-fill.svg);
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;

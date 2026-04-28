@@ -95,7 +95,42 @@ const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
   target: '_blank',
 };
 
-export default function Editor(): JSX.Element {
+export interface EditorPlugins {
+  mentions?: boolean;
+  stt?: boolean;
+  comment?: boolean;
+  autocomplete?: boolean;
+  toc?: boolean;
+  collaboration?: boolean;
+  poll?: boolean;
+  equations?: boolean;
+  excalidraw?: boolean;
+  layout?: boolean;
+  embed?: boolean;
+  sticky?: boolean;
+}
+
+export interface EditorProps {
+  plugins?: EditorPlugins;
+  extraRender?: boolean | ((editor: any) => JSX.Element) | null;
+  children?: JSX.Element | null;
+}
+
+export default function Editor({plugins = {}, extraRender = false, children = null}: EditorProps = {}): JSX.Element {
+  const {
+    mentions = true,
+    stt = false,
+    comment = false,
+    autocomplete = false,
+    toc = false,
+    collaboration = false,
+    poll = false,
+    equations = false,
+    excalidraw = false,
+    layout = true,
+    embed = false,
+  } = plugins;
+
   const {
     settings: {
       isCodeHighlighted,
@@ -197,6 +232,7 @@ export default function Editor(): JSX.Element {
           activeEditor={activeEditor}
           setActiveEditor={setActiveEditor}
           setIsLinkEditMode={setIsLinkEditMode}
+          plugins={plugins}
         />
       )}
       {isRichText && (
@@ -209,19 +245,19 @@ export default function Editor(): JSX.Element {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
-        <ComponentPickerPlugin />
+        <ComponentPickerPlugin plugins={plugins} />
         <EmojiPickerPlugin />
-        <AutoEmbedPlugin />
-        <MentionsPlugin />
-        <SpeechToTextPlugin />
-        {!(isCollab && useCollabV2) && (
+        {embed && <AutoEmbedPlugin />}
+        {mentions && <MentionsPlugin />}
+        {stt && <SpeechToTextPlugin />}
+        {comment && !(isCollab && useCollabV2) && (
           <CommentPlugin
             providerFactory={isCollab ? createWebsocketProvider : undefined}
           />
         )}
         {isRichText ? (
           <>
-            {isCollab ? (
+            {collaboration && isCollab ? (
               useCollabV2 ? (
                 <>
                   <CollabV2
@@ -252,11 +288,11 @@ export default function Editor(): JSX.Element {
             {hasFitNestedTables ? <TableFitNestedTablePlugin /> : null}
             <TableCellResizer />
             <TableScrollShadowPlugin />
-            <PollPlugin />
-            <EquationsPlugin />
-            <ExcalidrawPlugin />
+            {poll && <PollPlugin />}
+            {equations && <EquationsPlugin />}
+            {excalidraw && <ExcalidrawPlugin />}
             <TabIndentationPlugin maxIndent={7} />
-            <LayoutPlugin />
+            {layout && <LayoutPlugin />}
             {floatingAnchorElem && (
               <>
                 <FloatingLinkEditorPlugin
@@ -278,6 +314,7 @@ export default function Editor(): JSX.Element {
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                   setIsLinkEditMode={setIsLinkEditMode}
+                  plugins={plugins}
                 />
               </>
             )}
@@ -291,13 +328,16 @@ export default function Editor(): JSX.Element {
             maxLength={5}
           />
         )}
-        {isAutocomplete && <AutocompletePlugin />}
-        <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
+        {autocomplete && isAutocomplete && <AutocompletePlugin />}
+        <div>{toc && showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
           useCollabV2={useCollabV2}
+          plugins={plugins}
         />
+        {extraRender && (typeof extraRender === 'function' ? extraRender(activeEditor) : extraRender)}
+        {children}
       </div>
       {showTreeView && <TreeViewPlugin />}
     </>

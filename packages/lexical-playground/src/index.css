@@ -104,7 +104,7 @@
   width: 100%;
 }
 
-pre {
+.editor-shell pre {
   line-height: 1.1;
   background: #222;
   color: #fff;
@@ -128,12 +128,12 @@ pre {
   border-bottom-right-radius: 10px;
 }
 
-pre::-webkit-scrollbar {
+.editor-shell pre::-webkit-scrollbar {
   background: transparent;
   width: 10px;
 }
 
-pre::-webkit-scrollbar-thumb {
+.editor-shell pre::-webkit-scrollbar-thumb {
   background: #999;
 }
 

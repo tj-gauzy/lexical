@@ -622,8 +622,8 @@ i.page-setup,
   background-image: url(images/icons/file-earmark-text.svg);
 }
 
-.link-editor .button.active,
-.toolbar .button.active {
+.editor-shell .link-editor .button.active,
+.editor-shell .toolbar .button.active {
   background-color: rgb(223, 232, 250);
 }
 
@@ -747,12 +747,12 @@ i.page-setup,
   border-radius: 4px;
 }
 
-.mention:focus {
+.editor-shell .mention:focus {
   box-shadow: rgb(180 213 255) 0px 0px 0px 2px;
   outline: none;
 }
 
-.characters-limit {
+.editor-shell .characters-limit {
   color: #888;
   font-size: 12px;
   text-align: right;
@@ -766,7 +766,7 @@ i.page-setup,
   color: red;
 }
 
-.dropdown {
+body > .dropdown {
   z-index: 100;
   display: block;
   position: fixed;
@@ -1468,7 +1468,7 @@ button.action-button:disabled {
   pointer-events: none;
 }
 
-.toolbar {
+.editor-shell .toolbar {
   display: flex;
   margin-bottom: 1px;
   background: #fff;
@@ -1484,11 +1484,11 @@ button.action-button:disabled {
   overflow-y: hidden; /* disable vertical scroll*/
 }
 
-.toolbar .toolbar-item:focus {
+.editor-shell .toolbar .toolbar-item:focus {
   outline: 2px solid rgb(60, 132, 244);
 }
 
-button.toolbar-item {
+.editor-shell button.toolbar-item {
   border: 0;
   display: flex;
   background: none;
@@ -1501,15 +1501,15 @@ button.toolbar-item {
   justify-content: space-between;
 }
 
-button.toolbar-item:disabled {
+.editor-shell button.toolbar-item:disabled {
   cursor: not-allowed;
 }
 
-button.toolbar-item.spaced {
+.editor-shell button.toolbar-item.spaced {
   margin-right: 2px;
 }
 
-button.toolbar-item i.format {
+.editor-shell button.toolbar-item i.format {
   background-size: contain;
   display: inline-block;
   height: 18px;
@@ -1519,35 +1519,35 @@ button.toolbar-item i.format {
   opacity: 0.6;
 }
 
-button.toolbar-item:disabled .icon,
-button.toolbar-item:disabled .text,
-button.toolbar-item:disabled i.format,
-button.toolbar-item:disabled .chevron-down {
+.editor-shell button.toolbar-item:disabled .icon,
+.editor-shell button.toolbar-item:disabled .text,
+.editor-shell button.toolbar-item:disabled i.format,
+.editor-shell button.toolbar-item:disabled .chevron-down {
   opacity: 0.2;
 }
 
-button.toolbar-item.active {
+.editor-shell button.toolbar-item.active {
   background-color: rgba(223, 232, 250, 0.3);
 }
 
-button.toolbar-item.active i {
+.editor-shell button.toolbar-item.active i {
   opacity: 1;
 }
 
-.toolbar-item:hover:not([disabled]) {
+.editor-shell .toolbar-item:hover:not([disabled]) {
   background-color: #eee;
 }
 
-.toolbar-item.font-family .text {
+.editor-shell .toolbar-item.font-family .text {
   display: block;
   max-width: 40px;
 }
 
-.toolbar .code-language {
+.editor-shell .toolbar .code-language {
   width: 150px;
 }
 
-.toolbar .toolbar-item .text {
+.editor-shell .toolbar .toolbar-item .text {
   display: flex;
   line-height: 20px;
   vertical-align: middle;
@@ -1560,7 +1560,7 @@ button.toolbar-item.active i {
   padding-right: 10px;
 }
 
-.toolbar .toolbar-item .icon {
+.editor-shell .toolbar .toolbar-item .icon {
   display: flex;
   width: 20px;
   height: 20px;
@@ -1570,8 +1570,8 @@ button.toolbar-item.active i {
   background-size: contain;
 }
 
-.toolbar i.chevron-down,
-.toolbar-item i.chevron-down {
+.editor-shell .toolbar i.chevron-down,
+.editor-shell .toolbar-item i.chevron-down {
   margin-top: 3px;
   width: 16px;
   height: 16px;
@@ -1579,7 +1579,7 @@ button.toolbar-item.active i {
   user-select: none;
 }
 
-.toolbar i.chevron-down.inside {
+.editor-shell .toolbar i.chevron-down.inside {
   width: 16px;
   height: 16px;
   display: flex;
@@ -1589,7 +1589,7 @@ button.toolbar-item.active i {
   pointer-events: none;
 }
 
-.toolbar .divider {
+.editor-shell .toolbar .divider {
   width: 1px;
   background-color: #eee;
   margin: 0 4px;

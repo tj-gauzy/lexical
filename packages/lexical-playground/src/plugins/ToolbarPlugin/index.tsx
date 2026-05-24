@@ -85,7 +85,8 @@ import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
-import {InsertEquationDialog} from '../EquationsPlugin';
+import {InsertEquationDialog, INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
+import {useEquationDialogProvider} from '../../context/EquationDialogContext';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
   InsertImageDialog,
@@ -583,6 +584,7 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
+  const equationDialog = useEquationDialogProvider();
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,
@@ -1357,6 +1359,18 @@ export default function ToolbarPlugin({
                 {equations && (
                   <DropDownItem
                     onClick={() => {
+                      if (equationDialog) {
+                        equationDialog({}).then((result) => {
+                          if (!result) {
+                            return;
+                          }
+                          activeEditor.dispatchCommand(
+                            INSERT_EQUATION_COMMAND,
+                            result,
+                          );
+                        });
+                        return;
+                      }
                       showModal('Insert Equation', (onClose) => (
                         <InsertEquationDialog
                           activeEditor={activeEditor}

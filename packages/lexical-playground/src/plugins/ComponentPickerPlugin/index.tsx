@@ -36,11 +36,13 @@ import {
 import {useCallback, useMemo, useState} from 'react';
 
 import type {EditorPlugins} from '../../Editor';
+import {useEquationDialogProvider} from '../../context/EquationDialogContext';
 import useModal from '../../hooks/useModal';
+import type {EquationDialogProvider} from '../../standalone/types';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
-import {InsertEquationDialog} from '../EquationsPlugin';
+import {InsertEquationDialog, INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
@@ -149,6 +151,7 @@ export function getBaseOptions(
   editor: LexicalEditor,
   showModal: ShowModal,
   plugins: EditorPlugins = {},
+  equationDialog: EquationDialogProvider | null = null,
 ) {
   const {
     excalidraw = false,
@@ -327,10 +330,20 @@ export function getBaseOptions(
           new ComponentPickerOption('Equation', {
             icon: <i className="icon equation" />,
             keywords: ['equation', 'latex', 'math'],
-            onSelect: () =>
+            onSelect: () => {
+              if (equationDialog) {
+                equationDialog({}).then((result) => {
+                  if (!result) {
+                    return;
+                  }
+                  editor.dispatchCommand(INSERT_EQUATION_COMMAND, result);
+                });
+                return;
+              }
               showModal('Insert Equation', (onClose) => (
                 <InsertEquationDialog activeEditor={editor} onClose={onClose} />
-              )),
+              ));
+            },
           }),
         ]
       : []),
@@ -380,6 +393,7 @@ export default function ComponentPickerMenuPlugin({
   const [editor] = useLexicalComposerContext();
   const [modal, showModal] = useModal();
   const [queryString, setQueryString] = useState<string | null>(null);
+  const equationDialog = useEquationDialogProvider();
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
     allowWhitespace: true,
@@ -387,7 +401,7 @@ export default function ComponentPickerMenuPlugin({
   });
 
   const options = useMemo(() => {
-    const baseOptions = getBaseOptions(editor, showModal, plugins);
+    const baseOptions = getBaseOptions(editor, showModal, plugins, equationDialog);
 
     if (!queryString) {
       return baseOptions;
@@ -403,7 +417,7 @@ export default function ComponentPickerMenuPlugin({
           option.keywords.some((keyword) => regex.test(keyword)),
       ),
     ];
-  }, [editor, queryString, showModal, plugins]);
+  }, [editor, queryString, showModal, plugins, equationDialog]);
 
   const onSelectOption = useCallback(
     (

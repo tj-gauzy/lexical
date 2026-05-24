@@ -25,6 +25,7 @@ import {configExtension, defineExtension, $getRoot, $insertNodes, LexicalEditor,
 import {type JSX, type MutableRefObject, type RefObject, useEffect, useMemo, useRef} from 'react';
 
 import {buildHTMLConfig} from '../buildHTMLConfig';
+import {EquationDialogProviderContext} from '../context/EquationDialogContext';
 import {FlashMessageContext} from '../context/FlashMessageContext';
 import {SettingsContext, useSettings} from '../context/SettingsContext';
 import {ToolbarContext} from '../context/ToolbarContext';
@@ -164,6 +165,7 @@ interface StandaloneEditorInnerProps {
   contentSetterRef: MutableRefObject<((state: string | object) => void) | null>;
   lexicalEditorRef: MutableRefObject<LexicalEditor | null>;
   callbacks?: LexicalEditorCallbacks;
+  plugins?: LexicalEditorConfig['plugins'];
 }
 
 function StandaloneEditorInner({
@@ -172,6 +174,7 @@ function StandaloneEditorInner({
   contentSetterRef,
   lexicalEditorRef,
   callbacks,
+  plugins,
 }: StandaloneEditorInnerProps): JSX.Element {
   const {
     settings: {isCollab, isRichText, measureTypingPerf},
@@ -213,7 +216,7 @@ function StandaloneEditorInner({
       <LexicalExtensionComposer extension={app} contentEditable={null}>
         <ToolbarContext>
           <div className="editor-shell" onWheel={handleWheel}>
-            <Editor extraRender={editor => {
+            <Editor plugins={plugins} extraRender={editor => {
               return (
                 <>
                   <SetContentPlugin setterRef={contentSetterRef} editorRef={lexicalEditorRef} editor={editor}/>
@@ -250,7 +253,7 @@ export default function StandaloneApp({
   contentSetterRef,
   lexicalEditorRef,
 }: StandaloneAppProps): JSX.Element {
-  const {components, showSettingsPanel = false, initialEditorState} = config;
+  const {components, showSettingsPanel = false, initialEditorState, plugins} = config;
 
   // Freeze the initial state so re-renders triggered by config.update() don't
   // attempt to re-apply it to an already-mounted editor.
@@ -259,13 +262,16 @@ export default function StandaloneApp({
   return (
     <SettingsContext initialSettings={components}>
       <FlashMessageContext>
-        <StandaloneEditorInner
-          showSettingsPanel={showSettingsPanel}
-          initialEditorStateRef={initialEditorStateRef}
-          contentSetterRef={contentSetterRef}
-          lexicalEditorRef={lexicalEditorRef}
-          callbacks={callbacks}
-        />
+        <EquationDialogProviderContext value={callbacks?.equationDialog}>
+          <StandaloneEditorInner
+            showSettingsPanel={showSettingsPanel}
+            initialEditorStateRef={initialEditorStateRef}
+            contentSetterRef={contentSetterRef}
+            lexicalEditorRef={lexicalEditorRef}
+            callbacks={callbacks}
+            plugins={plugins}
+          />
+        </EquationDialogProviderContext>
       </FlashMessageContext>
     </SettingsContext>
   );

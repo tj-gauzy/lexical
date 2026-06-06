@@ -19,14 +19,14 @@
 
 import '../index.css';
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {createHeadlessEditor} from '@lexical/headless';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {$getRoot, $insertNodes} from 'lexical';
+import {$getRoot, $insertNodes, defineExtension} from 'lexical';
 import type {LexicalEditor, SerializedEditorState} from 'lexical';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -40,11 +40,23 @@ import type {
 } from './types';
 import PlaygroundEditorTheme from "../themes/PlaygroundEditorTheme";
 
+// Use buildEditorFromExtensions so the editor is tagged with builderSymbol.
+// This is required because ImageNode's caption editor uses NestedEditorExtension,
+// which calls LexicalBuilder.fromEditor($getEditor()) during init to verify the
+// parent editor was created with LexicalBuilder. createHeadlessEditor does not
+// add this marker, causing the "not created with LexicalBuilder" error when the
+// editor state contains images.
+const HeadlessExportExtension = defineExtension({
+  name: '@lexical/playground/headless-export',
+  nodes: PlaygroundNodes,
+  theme: PlaygroundEditorTheme,
+});
+
 let HeadLessEditor: null | LexicalEditor = null;
 
 const CreateHeadlessEditor = () => {
   if (!HeadLessEditor) {
-    HeadLessEditor = createHeadlessEditor({nodes: PlaygroundNodes, theme: PlaygroundEditorTheme});
+    HeadLessEditor = buildEditorFromExtensions(HeadlessExportExtension);
   }
   return HeadLessEditor;
 }
@@ -65,8 +77,8 @@ function resolveEditor(input: EditorInput): LexicalEditor {
     return input;
   }
   const headless = CreateHeadlessEditor();
-  headless.setEditorState(headless.parseEditorState(input));
-  return headless;
+  headless?.setEditorState(headless.parseEditorState(input));
+  return headless as LexicalEditor;
 }
 
 // ---------------------------------------------------------------------------

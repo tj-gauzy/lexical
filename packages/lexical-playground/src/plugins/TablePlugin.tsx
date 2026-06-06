@@ -12,6 +12,7 @@ import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {LexicalEditor} from 'lexical';
 import {useEffect, useState} from 'react';
 
+import {useTranslate} from '../context/LocalizationContext';
 import Button from '../ui/Button';
 import {DialogActions} from '../ui/Dialog';
 import TextInput from '../ui/TextInput';
@@ -23,6 +24,7 @@ export function InsertTableDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
+  const t = useTranslate();
   const [rows, setRows] = useState('5');
   const [columns, setColumns] = useState('5');
   const [isDisabled, setIsDisabled] = useState(true);
@@ -50,16 +52,16 @@ export function InsertTableDialog({
   return (
     <>
       <TextInput
-        placeholder={'# of rows (1-500)'}
-        label="Rows"
+        placeholder={t('table.dialogRowsPlaceholder', '# of rows (1-500)')}
+        label={t('table.dialogRows', 'Rows')}
         onChange={setRows}
         value={rows}
         data-test-id="table-modal-rows"
         type="number"
       />
       <TextInput
-        placeholder={'# of columns (1-50)'}
-        label="Columns"
+        placeholder={t('table.dialogColumnsPlaceholder', '# of columns (1-50)')}
+        label={t('table.dialogColumns', 'Columns')}
         onChange={setColumns}
         value={columns}
         data-test-id="table-modal-columns"
@@ -67,7 +69,7 @@ export function InsertTableDialog({
       />
       <DialogActions data-test-id="table-model-confirm-insert">
         <Button disabled={isDisabled} onClick={onClick}>
-          Confirm
+          {t('table.confirm', 'Confirm')}
         </Button>
       </DialogActions>
     </>

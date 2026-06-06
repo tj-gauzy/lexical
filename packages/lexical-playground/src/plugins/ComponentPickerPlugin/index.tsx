@@ -37,6 +37,7 @@ import {useCallback, useMemo, useState} from 'react';
 
 import type {EditorPlugins} from '../../Editor';
 import {useEquationDialogProvider} from '../../context/EquationDialogContext';
+import {useTranslate, type TranslateFn} from '../../context/LocalizationContext';
 import useModal from '../../hooks/useModal';
 import type {EquationDialogProvider} from '../../standalone/types';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
@@ -114,7 +115,11 @@ export function ComponentPickerMenuItem({
   );
 }
 
-export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
+export function getDynamicOptions(
+  editor: LexicalEditor,
+  queryString: string,
+  t: TranslateFn,
+) {
   const options: Array<ComponentPickerOption> = [];
 
   if (queryString == null) {
@@ -132,12 +137,15 @@ export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
     options.push(
       ...colOptions.map(
         (columns) =>
-          new ComponentPickerOption(`${rows}x${columns} Table`, {
-            icon: <i className="icon table" />,
-            keywords: ['table'],
-            onSelect: () =>
-              editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
-          }),
+          new ComponentPickerOption(
+            t('picker.tableSize', `${rows}x${columns} Table`, {rows, columns}),
+            {
+              icon: <i className="icon table" />,
+              keywords: ['table'],
+              onSelect: () =>
+                editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
+            },
+          ),
       ),
     );
   }
@@ -147,11 +155,19 @@ export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
 
 export type ShowModal = ReturnType<typeof useModal>[1];
 
+const ALIGN_LABELS: Record<'left' | 'center' | 'right' | 'justify', {key: string; def: string}> = {
+  left: {key: 'picker.alignLeft', def: 'Align left'},
+  center: {key: 'picker.alignCenter', def: 'Align center'},
+  right: {key: 'picker.alignRight', def: 'Align right'},
+  justify: {key: 'picker.alignJustify', def: 'Align justify'},
+};
+
 export function getBaseOptions(
   editor: LexicalEditor,
   showModal: ShowModal,
   plugins: EditorPlugins = {},
   equationDialog: EquationDialogProvider | null = null,
+  t: TranslateFn = (_k, def) => def,
 ) {
   const {
     excalidraw = false,
@@ -161,7 +177,7 @@ export function getBaseOptions(
     embed = false,
   } = plugins;
   return [
-    new ComponentPickerOption('Paragraph', {
+    new ComponentPickerOption(t('picker.paragraph', 'Paragraph'), {
       icon: <i className="icon paragraph" />,
       keywords: ['normal', 'paragraph', 'p', 'text'],
       onSelect: () =>
@@ -174,7 +190,7 @@ export function getBaseOptions(
     }),
     ...([1, 2, 3] as const).map(
       (n) =>
-        new ComponentPickerOption(`Heading ${n}`, {
+        new ComponentPickerOption(t('picker.heading', `Heading ${n}`, {n}), {
           icon: <i className={`icon h${n}`} />,
           keywords: ['heading', 'header', `h${n}`],
           onSelect: () =>
@@ -186,33 +202,33 @@ export function getBaseOptions(
             }),
         }),
     ),
-    new ComponentPickerOption('Table', {
+    new ComponentPickerOption(t('picker.table', 'Table'), {
       icon: <i className="icon table" />,
       keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
       onSelect: () =>
-        showModal('Insert Table', (onClose) => (
+        showModal(t('toolbar.modalInsertTable', 'Insert Table'), (onClose) => (
           <InsertTableDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
-    new ComponentPickerOption('Numbered List', {
+    new ComponentPickerOption(t('picker.numberedList', 'Numbered List'), {
       icon: <i className="icon number" />,
       keywords: ['numbered list', 'ordered list', 'ol'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Bulleted List', {
+    new ComponentPickerOption(t('picker.bulletedList', 'Bulleted List'), {
       icon: <i className="icon bullet" />,
       keywords: ['bulleted list', 'unordered list', 'ul'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Check List', {
+    new ComponentPickerOption(t('picker.checkList', 'Check List'), {
       icon: <i className="icon check" />,
       keywords: ['check list', 'todo list'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Quote', {
+    new ComponentPickerOption(t('picker.quote', 'Quote'), {
       icon: <i className="icon quote" />,
       keywords: ['block quote'],
       onSelect: () =>
@@ -223,7 +239,7 @@ export function getBaseOptions(
           }
         }),
     }),
-    new ComponentPickerOption('Code', {
+    new ComponentPickerOption(t('picker.code', 'Code'), {
       icon: <i className="icon code" />,
       keywords: ['javascript', 'python', 'js', 'codeblock'],
       onSelect: () =>
@@ -243,20 +259,20 @@ export function getBaseOptions(
           }
         }),
     }),
-    new ComponentPickerOption('Divider', {
+    new ComponentPickerOption(t('picker.divider', 'Divider'), {
       icon: <i className="icon horizontal-rule" />,
       keywords: ['horizontal rule', 'divider', 'hr'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Page Break', {
+    new ComponentPickerOption(t('picker.pageBreak', 'Page Break'), {
       icon: <i className="icon page-break" />,
       keywords: ['page break', 'divider'],
       onSelect: () => editor.dispatchCommand(INSERT_PAGE_BREAK, undefined),
     }),
     ...(excalidraw
       ? [
-          new ComponentPickerOption('Excalidraw', {
+          new ComponentPickerOption(t('picker.excalidraw', 'Excalidraw'), {
             icon: <i className="icon diagram-2" />,
             keywords: ['excalidraw', 'diagram', 'drawing'],
             onSelect: () =>
@@ -266,11 +282,11 @@ export function getBaseOptions(
       : []),
     ...(poll
       ? [
-          new ComponentPickerOption('Poll', {
+          new ComponentPickerOption(t('picker.poll', 'Poll'), {
             icon: <i className="icon poll" />,
             keywords: ['poll', 'vote'],
             onSelect: () =>
-              showModal('Insert Poll', (onClose) => (
+              showModal(t('toolbar.modalInsertPoll', 'Insert Poll'), (onClose) => (
                 <InsertPollDialog activeEditor={editor} onClose={onClose} />
               )),
           }),
@@ -279,15 +295,18 @@ export function getBaseOptions(
     ...(embed
       ? EmbedConfigs.map(
           (embedConfig) =>
-            new ComponentPickerOption(`Embed ${embedConfig.contentName}`, {
-              icon: embedConfig.icon,
-              keywords: [...embedConfig.keywords, 'embed'],
-              onSelect: () =>
-                editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
-            }),
+            new ComponentPickerOption(
+              t('picker.embed', `Embed ${embedConfig.contentName}`, {name: embedConfig.contentName}),
+              {
+                icon: embedConfig.icon,
+                keywords: [...embedConfig.keywords, 'embed'],
+                onSelect: () =>
+                  editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
+              },
+            ),
         )
       : []),
-    new ComponentPickerOption('Date', {
+    new ComponentPickerOption(t('picker.date', 'Date'), {
       icon: <i className="icon calendar" />,
       keywords: ['date', 'calendar', 'time'],
       onSelect: () => {
@@ -296,7 +315,7 @@ export function getBaseOptions(
         editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
       },
     }),
-    new ComponentPickerOption('Today', {
+    new ComponentPickerOption(t('picker.today', 'Today'), {
       icon: <i className="icon calendar" />,
       keywords: ['date', 'calendar', 'time', 'today'],
       onSelect: () => {
@@ -305,7 +324,7 @@ export function getBaseOptions(
         editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
       },
     }),
-    new ComponentPickerOption('Tomorrow', {
+    new ComponentPickerOption(t('picker.tomorrow', 'Tomorrow'), {
       icon: <i className="icon calendar" />,
       keywords: ['date', 'calendar', 'time', 'tomorrow'],
       onSelect: () => {
@@ -315,7 +334,7 @@ export function getBaseOptions(
         editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
       },
     }),
-    new ComponentPickerOption('Yesterday', {
+    new ComponentPickerOption(t('picker.yesterday', 'Yesterday'), {
       icon: <i className="icon calendar" />,
       keywords: ['date', 'calendar', 'time', 'yesterday'],
       onSelect: () => {
@@ -327,7 +346,7 @@ export function getBaseOptions(
     }),
     ...(equations
       ? [
-          new ComponentPickerOption('Equation', {
+          new ComponentPickerOption(t('picker.equation', 'Equation'), {
             icon: <i className="icon equation" />,
             keywords: ['equation', 'latex', 'math'],
             onSelect: () => {
@@ -340,22 +359,22 @@ export function getBaseOptions(
                 });
                 return;
               }
-              showModal('Insert Equation', (onClose) => (
+              showModal(t('toolbar.modalInsertEquation', 'Insert Equation'), (onClose) => (
                 <InsertEquationDialog activeEditor={editor} onClose={onClose} />
               ));
             },
           }),
         ]
       : []),
-    new ComponentPickerOption('Image', {
+    new ComponentPickerOption(t('picker.image', 'Image'), {
       icon: <i className="icon image" />,
       keywords: ['image', 'photo', 'picture', 'file'],
       onSelect: () =>
-        showModal('Insert Image', (onClose) => (
+        showModal(t('toolbar.modalInsertImage', 'Insert Image'), (onClose) => (
           <InsertImageDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
-    new ComponentPickerOption('Collapsible', {
+    new ComponentPickerOption(t('picker.collapsible', 'Collapsible'), {
       icon: <i className="icon caret-right" />,
       keywords: ['collapse', 'collapsible', 'toggle'],
       onSelect: () =>
@@ -363,11 +382,11 @@ export function getBaseOptions(
     }),
     ...(layout
       ? [
-          new ComponentPickerOption('Columns Layout', {
+          new ComponentPickerOption(t('picker.columnsLayout', 'Columns Layout'), {
             icon: <i className="icon columns" />,
             keywords: ['columns', 'layout', 'grid'],
             onSelect: () =>
-              showModal('Insert Columns Layout', (onClose) => (
+              showModal(t('toolbar.modalInsertLayout', 'Insert Columns Layout'), (onClose) => (
                 <InsertLayoutDialog activeEditor={editor} onClose={onClose} />
               )),
           }),
@@ -375,7 +394,7 @@ export function getBaseOptions(
       : []),
     ...(['left', 'center', 'right', 'justify'] as const).map(
       (alignment) =>
-        new ComponentPickerOption(`Align ${alignment}`, {
+        new ComponentPickerOption(t(ALIGN_LABELS[alignment].key, ALIGN_LABELS[alignment].def), {
           icon: <i className={`icon ${alignment}-align`} />,
           keywords: ['align', 'justify', alignment],
           onSelect: () =>
@@ -394,6 +413,7 @@ export default function ComponentPickerMenuPlugin({
   const [modal, showModal] = useModal();
   const [queryString, setQueryString] = useState<string | null>(null);
   const equationDialog = useEquationDialogProvider();
+  const t = useTranslate();
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
     allowWhitespace: true,
@@ -401,7 +421,7 @@ export default function ComponentPickerMenuPlugin({
   });
 
   const options = useMemo(() => {
-    const baseOptions = getBaseOptions(editor, showModal, plugins, equationDialog);
+    const baseOptions = getBaseOptions(editor, showModal, plugins, equationDialog, t);
 
     if (!queryString) {
       return baseOptions;
@@ -410,14 +430,14 @@ export default function ComponentPickerMenuPlugin({
     const regex = new RegExp(queryString, 'i');
 
     return [
-      ...getDynamicOptions(editor, queryString),
+      ...getDynamicOptions(editor, queryString, t),
       ...baseOptions.filter(
         (option) =>
           regex.test(option.title) ||
           option.keywords.some((keyword) => regex.test(keyword)),
       ),
     ];
-  }, [editor, queryString, showModal, plugins, equationDialog]);
+  }, [editor, queryString, showModal, plugins, equationDialog, t]);
 
   const onSelectOption = useCallback(
     (

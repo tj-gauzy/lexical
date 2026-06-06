@@ -1,7 +1,10 @@
 import type {LexicalEditor} from 'lexical';
 
+import type {TranslateFn} from '../context/LocalizationContext';
 import type {EditorPlugins} from '../Editor';
 import type {SettingName} from '../appSettings';
+
+export type {TranslateFn};
 
 /**
  * Boolean feature toggles — keys correspond 1-to-1 with the switches
@@ -28,6 +31,20 @@ export interface LexicalEditorConfig {
    * Only supplied keys are applied; absent keys fall back to their defaults.
    */
   plugins?: EditorPlugins;
+  /**
+   * Host-supplied translation function. Called as
+   *   translate(key, defaultMessage, values?)
+   * where `key` follows the `<group>.<label>` convention (e.g. `toolbar.bold`)
+   * and `defaultMessage` is the built-in English label. The host adapter is
+   * expected to map `key` into its locale namespace (typically by prefixing
+   * `lexical.`). When omitted the editor falls back to `defaultMessage`
+   * verbatim, so it still renders correctly with no host integration.
+   *
+   * To react to locale changes after mount, pass a new function reference to
+   * instance.update({translate}); StandaloneApp will re-render and propagate
+   * the change to every consumer via React context.
+   */
+  translate?: TranslateFn;
 }
 
 /**

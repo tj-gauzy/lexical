@@ -26,6 +26,7 @@ import {
 } from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
+import {useTranslate} from '../context/LocalizationContext';
 import Button from '../ui/Button';
 import joinClasses from '../utils/joinClasses';
 import {$isPollNode, createPollOption} from './PollNode';
@@ -53,6 +54,7 @@ function PollOptionComponent({
   ) => void;
 }): JSX.Element {
   const {name: username} = useCollaborationContext();
+  const t = useTranslate();
   const checkboxRef = useRef(null);
   const votesArray = option.votes;
   const checkedIndex = votesArray.indexOf(username);
@@ -106,7 +108,7 @@ function PollOptionComponent({
               },
             );
           }}
-          placeholder={`Option ${index + 1}`}
+          placeholder={t('poll.optionPlaceholder', `Option ${index + 1}`, {n: index + 1})}
         />
       </div>
       <button
@@ -115,7 +117,7 @@ function PollOptionComponent({
           'PollNode__optionDelete',
           options.length < 3 && 'PollNode__optionDeleteDisabled',
         )}
-        aria-label="Remove"
+        aria-label={t('poll.removeOption', 'Remove')}
         onClick={() => {
           withPollNode((node) => {
             node.deleteOption(option);

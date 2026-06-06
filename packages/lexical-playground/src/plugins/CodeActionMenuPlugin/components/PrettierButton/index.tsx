@@ -11,6 +11,7 @@ import {$isCodeNode} from '@lexical/code';
 import {$getNearestNodeFromDOMNode, LexicalEditor} from 'lexical';
 import {useState} from 'react';
 
+import {useTranslate} from '../../../../context/LocalizationContext';
 import {formatCodeWithPrettier} from '../../formatCodeWithPrettier';
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
+  const t = useTranslate();
   const [syntaxError, setSyntaxError] = useState<string>('');
   const [tipsVisible, setTipsVisible] = useState<boolean>(false);
 
@@ -84,7 +86,7 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        aria-label="prettier">
+        aria-label={t('code.prettier', 'prettier')}>
         {syntaxError ? (
           <i className="format prettier-error" />
         ) : (

@@ -54,6 +54,7 @@ import {
 
 import type {EditorPlugins} from '../../Editor';
 import {INITIAL_SETTINGS} from '../../appSettings';
+import {useTranslate} from '../../context/LocalizationContext';
 import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
@@ -126,6 +127,7 @@ export default function ActionsPlugin({
 }): JSX.Element {
   const {stt = false, collaboration = false} = plugins;
   const [editor] = useLexicalComposerContext();
+  const t = useTranslate();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -328,18 +330,18 @@ export default function ActionsPlugin({
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
           }
-          title="Speech To Text"
-          aria-label={`${
-            isSpeechToText ? 'Enable' : 'Disable'
-          } speech to text`}>
+          title={t('actions.speechToText', 'Speech To Text')}
+          aria-label={isSpeechToText
+            ? t('actions.ariaSpeechToTextEnable', 'Enable speech to text')
+            : t('actions.ariaSpeechToTextDisable', 'Disable speech to text')}>
           <i className="mic" />
         </button>
       )}
       <button
         className="action-button import"
         onClick={() => importFile(editor)}
-        title="Import"
-        aria-label="Import editor state from JSON">
+        title={t('actions.import', 'Import')}
+        aria-label={t('actions.ariaImport', 'Import editor state from JSON')}>
         <i className="import" />
       </button>
 
@@ -351,8 +353,8 @@ export default function ActionsPlugin({
             source: 'Playground',
           })
         }
-        title="Export"
-        aria-label="Export editor state to JSON">
+        title={t('actions.export', 'Export')}
+        aria-label={t('actions.ariaExport', 'Export editor state to JSON')}>
         <i className="export" />
       </button>
       <button
@@ -364,24 +366,24 @@ export default function ActionsPlugin({
               source: 'Playground',
             }),
           ).then(
-            () => showFlashMessage('URL copied to clipboard'),
-            () => showFlashMessage('URL could not be copied to clipboard'),
+            () => showFlashMessage(t('actions.urlCopied', 'URL copied to clipboard')),
+            () => showFlashMessage(t('actions.urlCopyFailed', 'URL could not be copied to clipboard')),
           )
         }
-        title="Share"
-        aria-label="Share Playground link to current editor state">
+        title={t('actions.share', 'Share')}
+        aria-label={t('actions.ariaShare', 'Share Playground link to current editor state')}>
         <i className="share" />
       </button>
       <button
         className="action-button clear"
         disabled={isEditorEmpty}
         onClick={() => {
-          showModal('Clear editor', (onClose) => (
+          showModal(t('actions.clearEditorModal', 'Clear editor'), (onClose) => (
             <ShowClearDialog editor={editor} onClose={onClose} />
           ));
         }}
-        title="Clear"
-        aria-label="Clear editor contents">
+        title={t('actions.clear', 'Clear')}
+        aria-label={t('actions.ariaClear', 'Clear editor contents')}>
         <i className="clear" />
       </button>
       <button
@@ -393,8 +395,10 @@ export default function ActionsPlugin({
           }
           editor.setEditable(!editor.isEditable());
         }}
-        title="Read-Only Mode"
-        aria-label={`${!isEditable ? 'Unlock' : 'Lock'} read-only mode`}>
+        title={t('actions.readOnlyMode', 'Read-Only Mode')}
+        aria-label={!isEditable
+          ? t('actions.ariaUnlock', 'Unlock read-only mode')
+          : t('actions.ariaLock', 'Lock read-only mode')}>
         <i className={!isEditable ? 'unlock' : 'lock'} />
       </button>
       <button
@@ -402,10 +406,12 @@ export default function ActionsPlugin({
         data-active={isMarkdown}
         disabled={isHtml || isPending}
         onClick={() => toggleMode('markdown')}
-        title={isMarkdown ? 'Convert From Markdown' : 'Convert To Markdown'}
-        aria-label={
-          isMarkdown ? 'Convert from markdown' : 'Convert To Markdown'
-        }>
+        title={isMarkdown
+          ? t('actions.convertFromMarkdown', 'Convert From Markdown')
+          : t('actions.convertToMarkdown', 'Convert To Markdown')}
+        aria-label={isMarkdown
+          ? t('actions.ariaConvertFromMarkdown', 'Convert from markdown')
+          : t('actions.ariaConvertToMarkdown', 'Convert To Markdown')}>
         <i className="markdown" />
       </button>
       <button
@@ -413,8 +419,12 @@ export default function ActionsPlugin({
         data-active={isHtml}
         disabled={isMarkdown || isPending}
         onClick={() => toggleMode('html')}
-        title={isHtml ? 'Convert From HTML' : ' Convert To HTML'}
-        aria-label={isHtml ? 'Convert from html' : 'Convert to html'}>
+        title={isHtml
+          ? t('actions.convertFromHTML', 'Convert From HTML')
+          : t('actions.convertToHTML', ' Convert To HTML')}
+        aria-label={isHtml
+          ? t('actions.ariaConvertFromHTML', 'Convert from html')
+          : t('actions.ariaConvertToHTML', 'Convert to html')}>
         <i className="html" />
       </button>
       {collaboration && isCollabActive && (
@@ -424,12 +434,12 @@ export default function ActionsPlugin({
             onClick={() => {
               editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
             }}
-            title={`${
-              connected ? 'Disconnect' : 'Connect'
-            } Collaborative Editing`}
-            aria-label={`${
-              connected ? 'Disconnect from' : 'Connect to'
-            } a collaborative editing server`}>
+            title={connected
+              ? t('actions.disconnectCollab', 'Disconnect Collaborative Editing')
+              : t('actions.connectCollab', 'Connect Collaborative Editing')}
+            aria-label={connected
+              ? t('actions.ariaDisconnectCollab', 'Disconnect from a collaborative editing server')
+              : t('actions.ariaConnectCollab', 'Connect to a collaborative editing server')}>
             <i className={connected ? 'disconnect' : 'connect'} />
           </button>
           {useCollabV2 && (
@@ -455,9 +465,10 @@ function ShowClearDialog({
   editor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
+  const t = useTranslate();
   return (
     <>
-      Are you sure you want to clear the editor?
+      {t('actions.clearConfirm', 'Are you sure you want to clear the editor?')}
       <div className="Modal__content">
         <Button
           onClick={() => {
@@ -465,14 +476,14 @@ function ShowClearDialog({
             editor.focus();
             onClose();
           }}>
-          Clear
+          {t('actions.clear', 'Clear')}
         </Button>{' '}
         <Button
           onClick={() => {
             editor.focus();
             onClose();
           }}>
-          Cancel
+          {t('actions.cancel', 'Cancel')}
         </Button>
       </div>
     </>

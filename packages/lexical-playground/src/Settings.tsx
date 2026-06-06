@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import {useMemo, useState} from 'react';
 
 import {isDevPlayground} from './appSettings';
+import {useTranslate} from './context/LocalizationContext';
 import {useSettings} from './context/SettingsContext';
 import Switch from './ui/Switch';
 
@@ -40,6 +41,7 @@ export default function Settings(): JSX.Element {
       isCodeShiki,
     },
   } = useSettings();
+  const t = useTranslate();
   const [showSettings, setShowSettings] = useState(false);
   const [isSplitScreen, search] = useMemo(() => {
     const parentWindow = window.parent;
@@ -66,7 +68,7 @@ export default function Settings(): JSX.Element {
                 window.location.reload();
               }}
               checked={isCollab}
-              text="Collaboration"
+              text={t('settings.collaboration', 'Collaboration')}
             />
           )}
           {isDevPlayground && (
@@ -79,25 +81,25 @@ export default function Settings(): JSX.Element {
                 }
               }}
               checked={isSplitScreen}
-              text="Split Screen"
+              text={t('settings.splitScreen', 'Split Screen')}
             />
           )}
           <Switch
             onClick={() => setOption('measureTypingPerf', !measureTypingPerf)}
             checked={measureTypingPerf}
-            text="Measure Perf"
+            text={t('settings.measurePerf', 'Measure Perf')}
           />
           <Switch
             onClick={() => setOption('showTreeView', !showTreeView)}
             checked={showTreeView}
-            text="Debug View"
+            text={t('settings.debugView', 'Debug View')}
           />
           <Switch
             onClick={() =>
               setOption('showNestedEditorTreeView', !showNestedEditorTreeView)
             }
             checked={showNestedEditorTreeView}
-            text="Nested Editors Debug View"
+            text={t('settings.nestedEditorsDebugView', 'Nested Editors Debug View')}
           />
           <Switch
             onClick={() => {
@@ -105,53 +107,53 @@ export default function Settings(): JSX.Element {
               setOption('isCollab', false);
             }}
             checked={isRichText}
-            text="Rich Text"
+            text={t('settings.richText', 'Rich Text')}
           />
           <Switch
             onClick={() => {
               setOption('hasNestedTables', !hasNestedTables);
             }}
             checked={hasNestedTables}
-            text="Nested Tables"
+            text={t('settings.nestedTables', 'Nested Tables')}
           />
           <Switch
             onClick={() => {
               setOption('hasFitNestedTables', !hasFitNestedTables);
             }}
             checked={hasFitNestedTables}
-            text="Fit nested tables"
+            text={t('settings.fitNestedTables', 'Fit nested tables')}
           />
           <Switch
             onClick={() => setOption('isCharLimit', !isCharLimit)}
             checked={isCharLimit}
-            text="Char Limit"
+            text={t('settings.charLimit', 'Char Limit')}
           />
           <Switch
             onClick={() => setOption('isCharLimitUtf8', !isCharLimitUtf8)}
             checked={isCharLimitUtf8}
-            text="Char Limit (UTF-8)"
+            text={t('settings.charLimitUtf8', 'Char Limit (UTF-8)')}
           />
           <Switch
             onClick={() => setOption('hasLinkAttributes', !hasLinkAttributes)}
             checked={hasLinkAttributes}
-            text="Link Attributes"
+            text={t('settings.linkAttributes', 'Link Attributes')}
           />
           <Switch
             onClick={() => setOption('isMaxLength', !isMaxLength)}
             checked={isMaxLength}
-            text="Max Length"
+            text={t('settings.maxLength', 'Max Length')}
           />
           <Switch
             onClick={() => setOption('isAutocomplete', !isAutocomplete)}
             checked={isAutocomplete}
-            text="Autocomplete"
+            text={t('settings.autocomplete', 'Autocomplete')}
           />
           <Switch
             onClick={() => {
               setOption('showTableOfContents', !showTableOfContents);
             }}
             checked={showTableOfContents}
-            text="Table Of Contents"
+            text={t('settings.tableOfContents', 'Table Of Contents')}
           />
           <Switch
             onClick={() => {
@@ -161,7 +163,7 @@ export default function Settings(): JSX.Element {
               );
             }}
             checked={shouldUseLexicalContextMenu}
-            text="Use Lexical Context Menu"
+            text={t('settings.useLexicalContextMenu', 'Use Lexical Context Menu')}
           />
           <Switch
             onClick={() => {
@@ -171,7 +173,7 @@ export default function Settings(): JSX.Element {
               );
             }}
             checked={shouldPreserveNewLinesInMarkdown}
-            text="Preserve newlines in Markdown"
+            text={t('settings.preserveNewLinesInMarkdown', 'Preserve newlines in Markdown')}
           />
           <Switch
             onClick={() => {
@@ -181,7 +183,7 @@ export default function Settings(): JSX.Element {
               );
             }}
             checked={shouldAllowHighlightingWithBrackets}
-            text="Use Brackets for Highlighting"
+            text={t('settings.useBracketsHighlighting', 'Use Brackets for Highlighting')}
           />
 
           <Switch
@@ -189,7 +191,7 @@ export default function Settings(): JSX.Element {
               setOption('selectionAlwaysOnDisplay', !selectionAlwaysOnDisplay);
             }}
             checked={selectionAlwaysOnDisplay}
-            text="Retain selection"
+            text={t('settings.retainSelection', 'Retain selection')}
           />
 
           <Switch
@@ -197,7 +199,7 @@ export default function Settings(): JSX.Element {
               setOption('isCodeHighlighted', !isCodeHighlighted);
             }}
             checked={isCodeHighlighted}
-            text="Enable Code Highlighting"
+            text={t('settings.enableCodeHighlighting', 'Enable Code Highlighting')}
           />
 
           <Switch
@@ -205,7 +207,7 @@ export default function Settings(): JSX.Element {
               setOption('isCodeShiki', !isCodeShiki);
             }}
             checked={isCodeShiki}
-            text="Use Shiki for Code Highlighting"
+            text={t('settings.useShikiHighlighting', 'Use Shiki for Code Highlighting')}
           />
         </div>
       ) : null}

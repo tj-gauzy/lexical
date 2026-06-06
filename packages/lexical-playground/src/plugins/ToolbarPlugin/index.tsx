@@ -70,6 +70,7 @@ import {
 import {Dispatch, useCallback, useEffect, useState} from 'react';
 
 import type {EditorPlugins} from '../../Editor';
+import {useTranslate, type TranslateFn} from '../../context/LocalizationContext';
 import {useSettings} from '../../context/SettingsContext';
 import {
   blockTypeToBlockName,
@@ -214,39 +215,68 @@ const ELEMENT_FORMAT_OPTIONS: {
     icon: string;
     iconRTL: string;
     name: string;
+    nameKey: string;
   };
 } = {
   center: {
     icon: 'center-align',
     iconRTL: 'center-align',
     name: 'Center Align',
+    nameKey: 'align.center',
   },
   end: {
     icon: 'right-align',
     iconRTL: 'left-align',
     name: 'End Align',
+    nameKey: 'align.end',
   },
   justify: {
     icon: 'justify-align',
     iconRTL: 'justify-align',
     name: 'Justify Align',
+    nameKey: 'align.justify',
   },
   left: {
     icon: 'left-align',
     iconRTL: 'left-align',
     name: 'Left Align',
+    nameKey: 'align.left',
   },
   right: {
     icon: 'right-align',
     iconRTL: 'right-align',
     name: 'Right Align',
+    nameKey: 'align.right',
   },
   start: {
     icon: 'left-align',
     iconRTL: 'right-align',
     name: 'Start Align',
+    nameKey: 'align.start',
   },
 };
+
+const BLOCK_TYPE_LABEL_KEYS: Record<keyof typeof blockTypeToBlockName, string> = {
+  bullet: 'toolbar.bulletList',
+  check: 'toolbar.checkList',
+  code: 'toolbar.codeBlock',
+  h1: 'toolbar.headingOne',
+  h2: 'toolbar.headingTwo',
+  h3: 'toolbar.headingThree',
+  h4: 'toolbar.headingOne',
+  h5: 'toolbar.headingTwo',
+  h6: 'toolbar.headingThree',
+  number: 'toolbar.numberedList',
+  paragraph: 'toolbar.normal',
+  quote: 'toolbar.quote',
+};
+
+function translateBlockType(
+  t: TranslateFn,
+  blockType: keyof typeof blockTypeToBlockName,
+): string {
+  return t(BLOCK_TYPE_LABEL_KEYS[blockType], blockTypeToBlockName[blockType]);
+}
 
 function dropDownActiveClass(active: boolean) {
   if (active) {
@@ -267,13 +297,14 @@ function BlockFormatDropDown({
   editor: LexicalEditor;
   disabled?: boolean;
 }): JSX.Element {
+  const t = useTranslate();
   return (
     <DropDown
       disabled={disabled}
       buttonClassName="toolbar-item block-controls"
       buttonIconClassName={'icon block-type ' + blockType}
-      buttonLabel={blockTypeToBlockName[blockType]}
-      buttonAriaLabel="Formatting options for text style">
+      buttonLabel={translateBlockType(t, blockType)}
+      buttonAriaLabel={t('toolbar.ariaBlockType', 'Formatting options for text style')}>
       <DropDownItem
         className={
           'item wide ' + dropDownActiveClass(blockType === 'paragraph')
@@ -281,7 +312,7 @@ function BlockFormatDropDown({
         onClick={() => formatParagraph(editor)}>
         <div className="icon-text-container">
           <i className="icon paragraph" />
-          <span className="text">Normal</span>
+          <span className="text">{t('toolbar.normal', 'Normal')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.NORMAL}</span>
       </DropDownItem>
@@ -290,7 +321,7 @@ function BlockFormatDropDown({
         onClick={() => formatHeading(editor, blockType, 'h1')}>
         <div className="icon-text-container">
           <i className="icon h1" />
-          <span className="text">Heading 1</span>
+          <span className="text">{t('toolbar.headingOne', 'Heading 1')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.HEADING1}</span>
       </DropDownItem>
@@ -299,7 +330,7 @@ function BlockFormatDropDown({
         onClick={() => formatHeading(editor, blockType, 'h2')}>
         <div className="icon-text-container">
           <i className="icon h2" />
-          <span className="text">Heading 2</span>
+          <span className="text">{t('toolbar.headingTwo', 'Heading 2')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.HEADING2}</span>
       </DropDownItem>
@@ -308,7 +339,7 @@ function BlockFormatDropDown({
         onClick={() => formatHeading(editor, blockType, 'h3')}>
         <div className="icon-text-container">
           <i className="icon h3" />
-          <span className="text">Heading 3</span>
+          <span className="text">{t('toolbar.headingThree', 'Heading 3')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.HEADING3}</span>
       </DropDownItem>
@@ -317,7 +348,7 @@ function BlockFormatDropDown({
         onClick={() => formatNumberedList(editor, blockType)}>
         <div className="icon-text-container">
           <i className="icon numbered-list" />
-          <span className="text">Numbered List</span>
+          <span className="text">{t('toolbar.numberedList', 'Numbered List')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.NUMBERED_LIST}</span>
       </DropDownItem>
@@ -326,7 +357,7 @@ function BlockFormatDropDown({
         onClick={() => formatBulletList(editor, blockType)}>
         <div className="icon-text-container">
           <i className="icon bullet-list" />
-          <span className="text">Bullet List</span>
+          <span className="text">{t('toolbar.bulletList', 'Bullet List')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.BULLET_LIST}</span>
       </DropDownItem>
@@ -335,7 +366,7 @@ function BlockFormatDropDown({
         onClick={() => formatCheckList(editor, blockType)}>
         <div className="icon-text-container">
           <i className="icon check-list" />
-          <span className="text">Check List</span>
+          <span className="text">{t('toolbar.checkList', 'Check List')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.CHECK_LIST}</span>
       </DropDownItem>
@@ -344,7 +375,7 @@ function BlockFormatDropDown({
         onClick={() => formatQuote(editor, blockType)}>
         <div className="icon-text-container">
           <i className="icon quote" />
-          <span className="text">Quote</span>
+          <span className="text">{t('toolbar.quote', 'Quote')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.QUOTE}</span>
       </DropDownItem>
@@ -353,7 +384,7 @@ function BlockFormatDropDown({
         onClick={() => formatCode(editor, blockType)}>
         <div className="icon-text-container">
           <i className="icon code" />
-          <span className="text">Code Block</span>
+          <span className="text">{t('toolbar.codeBlock', 'Code Block')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.CODE_BLOCK}</span>
       </DropDownItem>
@@ -376,6 +407,7 @@ function FontDropDown({
   style: string;
   disabled?: boolean;
 }): JSX.Element {
+  const t = useTranslate();
   const handleClick = useCallback(
     (option: string) => {
       editor.update(() => {
@@ -393,8 +425,8 @@ function FontDropDown({
 
   const buttonAriaLabel =
     style === 'font-family'
-      ? 'Formatting options for font family'
-      : 'Formatting options for font size';
+      ? t('toolbar.ariaFontFamily', 'Formatting options for font family')
+      : t('toolbar.ariaFontSize', 'Formatting options for font size');
 
   return (
     <DropDown
@@ -432,17 +464,18 @@ function ElementFormatDropdown({
   isRTL: boolean;
   disabled: boolean;
 }) {
+  const t = useTranslate();
   const formatOption = ELEMENT_FORMAT_OPTIONS[value || 'left'];
 
   return (
     <DropDown
       disabled={disabled}
-      buttonLabel={formatOption.name}
+      buttonLabel={t(formatOption.nameKey, formatOption.name)}
       buttonIconClassName={`icon ${
         isRTL ? formatOption.iconRTL : formatOption.icon
       }`}
       buttonClassName="toolbar-item spaced alignment"
-      buttonAriaLabel="Formatting options for text alignment">
+      buttonAriaLabel={t('toolbar.ariaTextAlign', 'Formatting options for text alignment')}>
       <DropDownItem
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
@@ -450,7 +483,7 @@ function ElementFormatDropdown({
         className="item wide">
         <div className="icon-text-container">
           <i className="icon left-align" />
-          <span className="text">Left Align</span>
+          <span className="text">{t('align.left', 'Left Align')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.LEFT_ALIGN}</span>
       </DropDownItem>
@@ -461,7 +494,7 @@ function ElementFormatDropdown({
         className="item wide">
         <div className="icon-text-container">
           <i className="icon center-align" />
-          <span className="text">Center Align</span>
+          <span className="text">{t('align.center', 'Center Align')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.CENTER_ALIGN}</span>
       </DropDownItem>
@@ -472,7 +505,7 @@ function ElementFormatDropdown({
         className="item wide">
         <div className="icon-text-container">
           <i className="icon right-align" />
-          <span className="text">Right Align</span>
+          <span className="text">{t('align.right', 'Right Align')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.RIGHT_ALIGN}</span>
       </DropDownItem>
@@ -483,7 +516,7 @@ function ElementFormatDropdown({
         className="item wide">
         <div className="icon-text-container">
           <i className="icon justify-align" />
-          <span className="text">Justify Align</span>
+          <span className="text">{t('align.justify', 'Justify Align')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.JUSTIFY_ALIGN}</span>
       </DropDownItem>
@@ -499,7 +532,7 @@ function ElementFormatDropdown({
               : ELEMENT_FORMAT_OPTIONS.start.icon
           }`}
         />
-        <span className="text">Start Align</span>
+        <span className="text">{t('align.start', 'Start Align')}</span>
       </DropDownItem>
       <DropDownItem
         onClick={() => {
@@ -513,7 +546,7 @@ function ElementFormatDropdown({
               : ELEMENT_FORMAT_OPTIONS.end.icon
           }`}
         />
-        <span className="text">End Align</span>
+        <span className="text">{t('align.end', 'End Align')}</span>
       </DropDownItem>
       <Divider />
       <DropDownItem
@@ -523,7 +556,7 @@ function ElementFormatDropdown({
         className="item wide">
         <div className="icon-text-container">
           <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
-          <span className="text">Outdent</span>
+          <span className="text">{t('align.outdent', 'Outdent')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.OUTDENT}</span>
       </DropDownItem>
@@ -534,7 +567,7 @@ function ElementFormatDropdown({
         className="item wide">
         <div className="icon-text-container">
           <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
-          <span className="text">Indent</span>
+          <span className="text">{t('align.indent', 'Indent')}</span>
         </div>
         <span className="shortcut">{SHORTCUTS.INDENT}</span>
       </DropDownItem>
@@ -585,6 +618,7 @@ export default function ToolbarPlugin({
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
   const equationDialog = useEquationDialogProvider();
+  const t = useTranslate();
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,
@@ -934,10 +968,12 @@ export default function ToolbarPlugin({
         onClick={(e) =>
           dispatchToolbarCommand(UNDO_COMMAND, undefined, isKeyboardInput(e))
         }
-        title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
+        title={IS_APPLE
+          ? t('toolbar.undoTitleMac', 'Undo (⌘Z)')
+          : t('toolbar.undoTitleWin', 'Undo (Ctrl+Z)')}
         type="button"
         className="toolbar-item spaced"
-        aria-label="Undo">
+        aria-label={t('toolbar.undo', 'Undo')}>
         <i className="format undo" />
       </button>
       <button
@@ -945,10 +981,12 @@ export default function ToolbarPlugin({
         onClick={(e) =>
           dispatchToolbarCommand(REDO_COMMAND, undefined, isKeyboardInput(e))
         }
-        title={IS_APPLE ? 'Redo (⇧⌘Z)' : 'Redo (Ctrl+Y)'}
+        title={IS_APPLE
+          ? t('toolbar.redoTitleMac', 'Redo (⇧⌘Z)')
+          : t('toolbar.redoTitleWin', 'Redo (Ctrl+Y)')}
         type="button"
         className="toolbar-item"
-        aria-label="Redo">
+        aria-label={t('toolbar.redo', 'Redo')}>
         <i className="format redo" />
       </button>
       <Divider />
@@ -977,7 +1015,7 @@ export default function ToolbarPlugin({
                     normalizeCodeLanguagePrism(toolbarState.codeLanguage),
                 ) || ['', ''])[1]
               }
-              buttonAriaLabel="Select language">
+              buttonAriaLabel={t('toolbar.selectLanguage', 'Select language')}>
               {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
                 return (
                   <DropDownItem
@@ -1004,7 +1042,7 @@ export default function ToolbarPlugin({
                       normalizeCodeLanguageShiki(toolbarState.codeLanguage),
                   ) || ['', ''])[1]
                 }
-                buttonAriaLabel="Select language">
+                buttonAriaLabel={t('toolbar.selectLanguage', 'Select language')}>
                 {CODE_LANGUAGE_OPTIONS_SHIKI.map(([value, name]) => {
                   return (
                     <DropDownItem
@@ -1026,7 +1064,7 @@ export default function ToolbarPlugin({
                     (opt) => opt[0] === toolbarState.codeTheme,
                   ) || ['', ''])[1]
                 }
-                buttonAriaLabel="Select theme">
+                buttonAriaLabel={t('toolbar.selectTheme', 'Select theme')}>
                 {CODE_THEME_OPTIONS_SHIKI.map(([value, name]) => {
                   return (
                     <DropDownItem
@@ -1068,9 +1106,9 @@ export default function ToolbarPlugin({
             className={
               'toolbar-item spaced ' + (toolbarState.isBold ? 'active' : '')
             }
-            title={`Bold (${SHORTCUTS.BOLD})`}
+            title={t('toolbar.boldTitle', `Bold (${SHORTCUTS.BOLD})`, {shortcut: SHORTCUTS.BOLD})}
             type="button"
-            aria-label={`Format text as bold. Shortcut: ${SHORTCUTS.BOLD}`}>
+            aria-label={t('toolbar.ariaBold', `Format text as bold. Shortcut: ${SHORTCUTS.BOLD}`, {shortcut: SHORTCUTS.BOLD})}>
             <i className="format bold" />
           </button>
           <button
@@ -1081,9 +1119,9 @@ export default function ToolbarPlugin({
             className={
               'toolbar-item spaced ' + (toolbarState.isItalic ? 'active' : '')
             }
-            title={`Italic (${SHORTCUTS.ITALIC})`}
+            title={t('toolbar.italicTitle', `Italic (${SHORTCUTS.ITALIC})`, {shortcut: SHORTCUTS.ITALIC})}
             type="button"
-            aria-label={`Format text as italics. Shortcut: ${SHORTCUTS.ITALIC}`}>
+            aria-label={t('toolbar.ariaItalic', `Format text as italics. Shortcut: ${SHORTCUTS.ITALIC}`, {shortcut: SHORTCUTS.ITALIC})}>
             <i className="format italic" />
           </button>
           <button
@@ -1095,9 +1133,9 @@ export default function ToolbarPlugin({
               'toolbar-item spaced ' +
               (toolbarState.isUnderline ? 'active' : '')
             }
-            title={`Underline (${SHORTCUTS.UNDERLINE})`}
+            title={t('toolbar.underlineTitle', `Underline (${SHORTCUTS.UNDERLINE})`, {shortcut: SHORTCUTS.UNDERLINE})}
             type="button"
-            aria-label={`Format text to underlined. Shortcut: ${SHORTCUTS.UNDERLINE}`}>
+            aria-label={t('toolbar.ariaUnderline', `Format text to underlined. Shortcut: ${SHORTCUTS.UNDERLINE}`, {shortcut: SHORTCUTS.UNDERLINE})}>
             <i className="format underline" />
           </button>
           {canViewerSeeInsertCodeButton && (
@@ -1109,9 +1147,9 @@ export default function ToolbarPlugin({
               className={
                 'toolbar-item spaced ' + (toolbarState.isCode ? 'active' : '')
               }
-              title={`Insert code block (${SHORTCUTS.INSERT_CODE_BLOCK})`}
+              title={t('toolbar.codeTitle', `Insert code block (${SHORTCUTS.INSERT_CODE_BLOCK})`, {shortcut: SHORTCUTS.INSERT_CODE_BLOCK})}
               type="button"
-              aria-label="Insert code block">
+              aria-label={t('toolbar.ariaCode', 'Insert code block')}>
               <i className="format code" />
             </button>
           )}
@@ -1121,34 +1159,34 @@ export default function ToolbarPlugin({
             className={
               'toolbar-item spaced ' + (toolbarState.isLink ? 'active' : '')
             }
-            aria-label="Insert link"
-            title={`Insert link (${SHORTCUTS.INSERT_LINK})`}
+            aria-label={t('toolbar.ariaLink', 'Insert link')}
+            title={t('toolbar.linkTitle', `Insert link (${SHORTCUTS.INSERT_LINK})`, {shortcut: SHORTCUTS.INSERT_LINK})}
             type="button">
             <i className="format link" />
           </button>
           <DropdownColorPicker
             disabled={!isEditable}
             buttonClassName="toolbar-item color-picker"
-            buttonAriaLabel="Formatting text color"
+            buttonAriaLabel={t('toolbar.ariaFontColor', 'Formatting text color')}
             buttonIconClassName="icon font-color"
             color={toolbarState.fontColor}
             onChange={onFontColorSelect}
-            title="text color"
+            title={t('toolbar.textColor', 'text color')}
           />
           <DropdownColorPicker
             disabled={!isEditable}
             buttonClassName="toolbar-item color-picker"
-            buttonAriaLabel="Formatting background color"
+            buttonAriaLabel={t('toolbar.ariaBgColor', 'Formatting background color')}
             buttonIconClassName="icon bg-color"
             color={toolbarState.bgColor}
             onChange={onBgColorSelect}
-            title="bg color"
+            title={t('toolbar.bgColor', 'bg color')}
           />
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"
             buttonLabel=""
-            buttonAriaLabel="Formatting options for additional text styles"
+            buttonAriaLabel={t('toolbar.ariaAdditionalStyles', 'Formatting options for additional text styles')}
             buttonIconClassName="icon dropdown-more">
             <DropDownItem
               onClick={(e) =>
@@ -1157,11 +1195,11 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isLowercase)
               }
-              title="Lowercase"
-              aria-label="Format text to lowercase">
+              title={t('toolbar.lowercase', 'Lowercase')}
+              aria-label={t('toolbar.ariaLowercase', 'Format text to lowercase')}>
               <div className="icon-text-container">
                 <i className="icon lowercase" />
-                <span className="text">Lowercase</span>
+                <span className="text">{t('toolbar.lowercase', 'Lowercase')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.LOWERCASE}</span>
             </DropDownItem>
@@ -1172,11 +1210,11 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isUppercase)
               }
-              title="Uppercase"
-              aria-label="Format text to uppercase">
+              title={t('toolbar.uppercase', 'Uppercase')}
+              aria-label={t('toolbar.ariaUppercase', 'Format text to uppercase')}>
               <div className="icon-text-container">
                 <i className="icon uppercase" />
-                <span className="text">Uppercase</span>
+                <span className="text">{t('toolbar.uppercase', 'Uppercase')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
             </DropDownItem>
@@ -1187,11 +1225,11 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
               }
-              title="Capitalize"
-              aria-label="Format text to capitalize">
+              title={t('toolbar.capitalize', 'Capitalize')}
+              aria-label={t('toolbar.ariaCapitalize', 'Format text to capitalize')}>
               <div className="icon-text-container">
                 <i className="icon capitalize" />
-                <span className="text">Capitalize</span>
+                <span className="text">{t('toolbar.capitalize', 'Capitalize')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.CAPITALIZE}</span>
             </DropDownItem>
@@ -1202,11 +1240,11 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isStrikethrough)
               }
-              title="Strikethrough"
-              aria-label="Format text with a strikethrough">
+              title={t('toolbar.strikethrough', 'Strikethrough')}
+              aria-label={t('toolbar.ariaStrikethrough', 'Format text with a strikethrough')}>
               <div className="icon-text-container">
                 <i className="icon strikethrough" />
-                <span className="text">Strikethrough</span>
+                <span className="text">{t('toolbar.strikethrough', 'Strikethrough')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.STRIKETHROUGH}</span>
             </DropDownItem>
@@ -1217,11 +1255,11 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSubscript)
               }
-              title="Subscript"
-              aria-label="Format text with a subscript">
+              title={t('toolbar.subscript', 'Subscript')}
+              aria-label={t('toolbar.ariaSubscript', 'Format text with a subscript')}>
               <div className="icon-text-container">
                 <i className="icon subscript" />
-                <span className="text">Subscript</span>
+                <span className="text">{t('toolbar.subscript', 'Subscript')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.SUBSCRIPT}</span>
             </DropDownItem>
@@ -1232,11 +1270,11 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSuperscript)
               }
-              title="Superscript"
-              aria-label="Format text with a superscript">
+              title={t('toolbar.superscript', 'Superscript')}
+              aria-label={t('toolbar.ariaSuperscript', 'Format text with a superscript')}>
               <div className="icon-text-container">
                 <i className="icon superscript" />
-                <span className="text">Superscript</span>
+                <span className="text">{t('toolbar.superscript', 'Superscript')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.SUPERSCRIPT}</span>
             </DropDownItem>
@@ -1247,21 +1285,21 @@ export default function ToolbarPlugin({
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isHighlight)
               }
-              title="Highlight"
-              aria-label="Format text with a highlight">
+              title={t('toolbar.highlight', 'Highlight')}
+              aria-label={t('toolbar.ariaHighlight', 'Format text with a highlight')}>
               <div className="icon-text-container">
                 <i className="icon highlight" />
-                <span className="text">Highlight</span>
+                <span className="text">{t('toolbar.highlight', 'Highlight')}</span>
               </div>
             </DropDownItem>
             <DropDownItem
               onClick={(e) => clearFormatting(activeEditor, isKeyboardInput(e))}
               className="item wide"
-              title="Clear text formatting"
-              aria-label="Clear all text formatting">
+              title={t('toolbar.clearFormattingTitle', 'Clear text formatting')}
+              aria-label={t('toolbar.ariaClearFormatting', 'Clear all text formatting')}>
               <div className="icon-text-container">
                 <i className="icon clear" />
-                <span className="text">Clear Formatting</span>
+                <span className="text">{t('toolbar.clearFormatting', 'Clear Formatting')}</span>
               </div>
               <span className="shortcut">{SHORTCUTS.CLEAR_FORMATTING}</span>
             </DropDownItem>
@@ -1273,8 +1311,8 @@ export default function ToolbarPlugin({
               <DropDown
                 disabled={!isEditable}
                 buttonClassName="toolbar-item spaced"
-                buttonLabel="Insert"
-                buttonAriaLabel="Insert specialized editor node"
+                buttonLabel={t('toolbar.insert', 'Insert')}
+                buttonAriaLabel={t('toolbar.ariaInsert', 'Insert specialized editor node')}
                 buttonIconClassName="icon plus">
                 <DropDownItem
                   onClick={() =>
@@ -1282,17 +1320,17 @@ export default function ToolbarPlugin({
                   }
                   className="item">
                   <i className="icon horizontal-rule" />
-                  <span className="text">Horizontal Rule</span>
+                  <span className="text">{t('toolbar.horizontalRule', 'Horizontal Rule')}</span>
                 </DropDownItem>
                 <DropDownItem
                   onClick={() => dispatchToolbarCommand(INSERT_PAGE_BREAK)}
                   className="item">
                   <i className="icon page-break" />
-                  <span className="text">Page Break</span>
+                  <span className="text">{t('toolbar.pageBreak', 'Page Break')}</span>
                 </DropDownItem>
                 <DropDownItem
                   onClick={() => {
-                    showModal('Insert Image', (onClose) => (
+                    showModal(t('toolbar.modalInsertImage', 'Insert Image'), (onClose) => (
                       <InsertImageDialog
                         activeEditor={activeEditor}
                         onClose={onClose}
@@ -1301,7 +1339,7 @@ export default function ToolbarPlugin({
                   }}
                   className="item">
                   <i className="icon image" />
-                  <span className="text">Image</span>
+                  <span className="text">{t('toolbar.image', 'Image')}</span>
                 </DropDownItem>
                 {excalidraw && (
                   <DropDownItem
@@ -1310,12 +1348,12 @@ export default function ToolbarPlugin({
                     }
                     className="item">
                     <i className="icon diagram-2" />
-                    <span className="text">Excalidraw</span>
+                    <span className="text">{t('toolbar.excalidraw', 'Excalidraw')}</span>
                   </DropDownItem>
                 )}
                 <DropDownItem
                   onClick={() => {
-                    showModal('Insert Table', (onClose) => (
+                    showModal(t('toolbar.modalInsertTable', 'Insert Table'), (onClose) => (
                       <InsertTableDialog
                         activeEditor={activeEditor}
                         onClose={onClose}
@@ -1324,12 +1362,12 @@ export default function ToolbarPlugin({
                   }}
                   className="item">
                   <i className="icon table" />
-                  <span className="text">Table</span>
+                  <span className="text">{t('toolbar.table', 'Table')}</span>
                 </DropDownItem>
                 {poll && (
                   <DropDownItem
                     onClick={() => {
-                      showModal('Insert Poll', (onClose) => (
+                      showModal(t('toolbar.modalInsertPoll', 'Insert Poll'), (onClose) => (
                         <InsertPollDialog
                           activeEditor={activeEditor}
                           onClose={onClose}
@@ -1338,13 +1376,13 @@ export default function ToolbarPlugin({
                     }}
                     className="item">
                     <i className="icon poll" />
-                    <span className="text">Poll</span>
+                    <span className="text">{t('toolbar.poll', 'Poll')}</span>
                   </DropDownItem>
                 )}
                 {layout && (
                   <DropDownItem
                     onClick={() => {
-                      showModal('Insert Columns Layout', (onClose) => (
+                      showModal(t('toolbar.modalInsertLayout', 'Insert Columns Layout'), (onClose) => (
                         <InsertLayoutDialog
                           activeEditor={activeEditor}
                           onClose={onClose}
@@ -1353,7 +1391,7 @@ export default function ToolbarPlugin({
                     }}
                     className="item">
                     <i className="icon columns" />
-                    <span className="text">Columns Layout</span>
+                    <span className="text">{t('toolbar.columnsLayout', 'Columns Layout')}</span>
                   </DropDownItem>
                 )}
                 {equations && (
@@ -1371,7 +1409,7 @@ export default function ToolbarPlugin({
                         });
                         return;
                       }
-                      showModal('Insert Equation', (onClose) => (
+                      showModal(t('toolbar.modalInsertEquation', 'Insert Equation'), (onClose) => (
                         <InsertEquationDialog
                           activeEditor={activeEditor}
                           onClose={onClose}
@@ -1380,7 +1418,7 @@ export default function ToolbarPlugin({
                     }}
                     className="item">
                     <i className="icon equation" />
-                    <span className="text">Equation</span>
+                    <span className="text">{t('toolbar.equation', 'Equation')}</span>
                   </DropDownItem>
                 )}
                   {
@@ -1396,7 +1434,7 @@ export default function ToolbarPlugin({
                               }}
                               className="item">
                               <i className="icon sticky" />
-                              <span className="text">Sticky Note</span>
+                              <span className="text">{t('toolbar.stickyNote', 'Sticky Note')}</span>
                           </DropDownItem>
                       )
                   }
@@ -1406,7 +1444,7 @@ export default function ToolbarPlugin({
                   }
                   className="item">
                   <i className="icon caret-right" />
-                  <span className="text">Collapsible container</span>
+                  <span className="text">{t('toolbar.collapsibleContainer', 'Collapsible container')}</span>
                 </DropDownItem>
                 <DropDownItem
                   onClick={() => {
@@ -1416,7 +1454,7 @@ export default function ToolbarPlugin({
                   }}
                   className="item">
                   <i className="icon calendar" />
-                  <span className="text">Date</span>
+                  <span className="text">{t('toolbar.date', 'Date')}</span>
                 </DropDownItem>
                 {embed &&
                   EmbedConfigs.map((embedConfig) => (

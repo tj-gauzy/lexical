@@ -21,6 +21,7 @@ import * as React from 'react';
 import {useEffect, useLayoutEffect, useRef} from 'react';
 
 import {createWebsocketProvider} from '../collaboration';
+import {useTranslate} from '../context/LocalizationContext';
 import {$isStickyNode} from './StickyNode';
 
 type Positioning = {
@@ -58,6 +59,7 @@ export default function StickyComponent({
   y: number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
+  const t = useTranslate();
   const stickyContainerRef = useRef<null | HTMLDivElement>(null);
   const positioningRef = useRef<Positioning>({
     isDragging: false,
@@ -216,15 +218,15 @@ export default function StickyComponent({
         <button
           onClick={handleDelete}
           className="delete"
-          aria-label="Delete sticky note"
-          title="Delete">
+          aria-label={t('sticky.ariaDelete', 'Delete sticky note')}
+          title={t('sticky.delete', 'Delete')}>
           X
         </button>
         <button
           onClick={handleColorChange}
           className="color"
-          aria-label="Change sticky note color"
-          title="Color">
+          aria-label={t('sticky.ariaColor', 'Change sticky note color')}
+          title={t('sticky.color', 'Color')}>
           <i className="bucket" />
         </button>
         <LexicalExtensionEditorComposer initialEditor={caption}>

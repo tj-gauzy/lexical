@@ -22,6 +22,7 @@ import {
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
+import {useTranslate} from '../../context/LocalizationContext';
 import {
   $createPollNode,
   createPollOption,
@@ -42,6 +43,7 @@ export function InsertPollDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
+  const t = useTranslate();
   const [question, setQuestion] = useState('');
 
   const onClick = () => {
@@ -51,10 +53,10 @@ export function InsertPollDialog({
 
   return (
     <>
-      <TextInput label="Question" onChange={setQuestion} value={question} />
+      <TextInput label={t('poll.question', 'Question')} onChange={setQuestion} value={question} />
       <DialogActions>
         <Button disabled={question.trim() === ''} onClick={onClick}>
-          Confirm
+          {t('poll.confirm', 'Confirm')}
         </Button>
       </DialogActions>
     </>

@@ -42,6 +42,7 @@ import {
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 
+import {useTranslate} from '../../context/LocalizationContext';
 import {
   $createImageNode,
   $isImageNode,
@@ -63,6 +64,7 @@ export function InsertImageUriDialogBody({
 }: {
   onClick: (payload: InsertImagePayload) => void;
 }) {
+  const t = useTranslate();
   const [src, setSrc] = useState('');
   const [altText, setAltText] = useState('');
 
@@ -71,15 +73,15 @@ export function InsertImageUriDialogBody({
   return (
     <>
       <TextInput
-        label="Image URL"
-        placeholder="i.e. https://source.unsplash.com/random"
+        label={t('image.imageURL', 'Image URL')}
+        placeholder={t('image.imageURLPlaceholder', 'i.e. https://source.unsplash.com/random')}
         onChange={setSrc}
         value={src}
         data-test-id="image-modal-url-input"
       />
       <TextInput
-        label="Alt Text"
-        placeholder="Random unsplash image"
+        label={t('image.altText', 'Alt Text')}
+        placeholder={t('image.altTextRandomPlaceholder', 'Random unsplash image')}
         onChange={setAltText}
         value={altText}
         data-test-id="image-modal-alt-text-input"
@@ -89,7 +91,7 @@ export function InsertImageUriDialogBody({
           data-test-id="image-modal-confirm-btn"
           disabled={isDisabled}
           onClick={() => onClick({altText, src})}>
-          Confirm
+          {t('image.confirm', 'Confirm')}
         </Button>
       </DialogActions>
     </>
@@ -101,6 +103,7 @@ export function InsertImageUploadedDialogBody({
 }: {
   onClick: (payload: InsertImagePayload) => void;
 }) {
+  const t = useTranslate();
   const [src, setSrc] = useState('');
   const [altText, setAltText] = useState('');
 
@@ -122,14 +125,14 @@ export function InsertImageUploadedDialogBody({
   return (
     <>
       <FileInput
-        label="Image Upload"
+        label={t('image.imageUpload', 'Image Upload')}
         onChange={loadImage}
         accept="image/*"
         data-test-id="image-modal-file-upload"
       />
       <TextInput
-        label="Alt Text"
-        placeholder="Descriptive alternative text"
+        label={t('image.altText', 'Alt Text')}
+        placeholder={t('image.altTextDescriptivePlaceholder', 'Descriptive alternative text')}
         onChange={setAltText}
         value={altText}
         data-test-id="image-modal-alt-text-input"
@@ -139,7 +142,7 @@ export function InsertImageUploadedDialogBody({
           data-test-id="image-modal-file-upload-btn"
           disabled={isDisabled}
           onClick={() => onClick({altText, src})}>
-          Confirm
+          {t('image.confirm', 'Confirm')}
         </Button>
       </DialogActions>
     </>
@@ -153,6 +156,7 @@ export function InsertImageDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
+  const t = useTranslate();
   const [mode, setMode] = useState<null | 'url' | 'file'>(null);
   const hasModifier = useRef(false);
 
@@ -179,12 +183,12 @@ export function InsertImageDialog({
           <Button
             data-test-id="image-modal-option-url"
             onClick={() => setMode('url')}>
-            URL
+            {t('image.url', 'URL')}
           </Button>
           <Button
             data-test-id="image-modal-option-file"
             onClick={() => setMode('file')}>
-            File
+            {t('image.file', 'File')}
           </Button>
         </DialogButtonsList>
       )}

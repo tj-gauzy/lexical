@@ -15,6 +15,7 @@ import * as React from 'react';
 import {useCallback, useState} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
 
+import {useTranslate} from '../context/LocalizationContext';
 import Button from '../ui/Button';
 import KatexRenderer from './KatexRenderer';
 
@@ -28,6 +29,7 @@ export default function KatexEquationAlterer({
   initialEquation = '',
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
+  const t = useTranslate();
   const [equation, setEquation] = useState<string>(initialEquation);
   const [inline, setInline] = useState<boolean>(true);
 
@@ -42,7 +44,7 @@ export default function KatexEquationAlterer({
   return (
     <>
       <div className="KatexEquationAlterer_defaultRow">
-        Inline
+        {t('equation.inline', 'Inline')}
         <input
           type="checkbox"
           checked={inline}
@@ -50,7 +52,7 @@ export default function KatexEquationAlterer({
           data-test-id="equation-inline-checkbox"
         />
       </div>
-      <div className="KatexEquationAlterer_defaultRow">Equation </div>
+      <div className="KatexEquationAlterer_defaultRow">{t('equation.equation', 'Equation')} </div>
       <div className="KatexEquationAlterer_centerRow">
         {inline ? (
           <input
@@ -72,7 +74,7 @@ export default function KatexEquationAlterer({
           />
         )}
       </div>
-      <div className="KatexEquationAlterer_defaultRow">Visualization </div>
+      <div className="KatexEquationAlterer_defaultRow">{t('equation.visualization', 'Visualization')} </div>
       <div className="KatexEquationAlterer_centerRow">
         <ErrorBoundary onError={(e) => editor._onError(e)} fallback={null}>
           <KatexRenderer
@@ -84,7 +86,7 @@ export default function KatexEquationAlterer({
       </div>
       <div className="KatexEquationAlterer_dialogActions">
         <Button onClick={onClick} data-test-id="equation-submit-btn">
-          Confirm
+          {t('equation.confirm', 'Confirm')}
         </Button>
       </div>
     </>

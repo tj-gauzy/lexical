@@ -27,6 +27,7 @@ import {type JSX, type MutableRefObject, type RefObject, useEffect, useMemo, use
 import {buildHTMLConfig} from '../buildHTMLConfig';
 import {EquationDialogProviderContext} from '../context/EquationDialogContext';
 import {FlashMessageContext} from '../context/FlashMessageContext';
+import {FontsContextProvider} from '../context/FontsContext';
 import {LocalizationContextProvider} from '../context/LocalizationContext';
 import {SettingsContext, useSettings} from '../context/SettingsContext';
 import {ToolbarContext} from '../context/ToolbarContext';
@@ -254,7 +255,7 @@ export default function StandaloneApp({
   contentSetterRef,
   lexicalEditorRef,
 }: StandaloneAppProps): JSX.Element {
-  const {components, showSettingsPanel = false, initialEditorState, plugins, translate} = config;
+  const {components, showSettingsPanel = false, initialEditorState, plugins, translate, fonts} = config;
 
   // Freeze the initial state so re-renders triggered by config.update() don't
   // attempt to re-apply it to an already-mounted editor.
@@ -262,20 +263,22 @@ export default function StandaloneApp({
 
   return (
     <LocalizationContextProvider translate={translate}>
-      <SettingsContext initialSettings={components}>
-        <FlashMessageContext>
-          <EquationDialogProviderContext value={callbacks?.equationDialog}>
-            <StandaloneEditorInner
-              showSettingsPanel={showSettingsPanel}
-              initialEditorStateRef={initialEditorStateRef}
-              contentSetterRef={contentSetterRef}
-              lexicalEditorRef={lexicalEditorRef}
-              callbacks={callbacks}
-              plugins={plugins}
-            />
-          </EquationDialogProviderContext>
-        </FlashMessageContext>
-      </SettingsContext>
+      <FontsContextProvider fonts={fonts}>
+        <SettingsContext initialSettings={components}>
+          <FlashMessageContext>
+            <EquationDialogProviderContext value={callbacks?.equationDialog}>
+              <StandaloneEditorInner
+                showSettingsPanel={showSettingsPanel}
+                initialEditorStateRef={initialEditorStateRef}
+                contentSetterRef={contentSetterRef}
+                lexicalEditorRef={lexicalEditorRef}
+                callbacks={callbacks}
+                plugins={plugins}
+              />
+            </EquationDialogProviderContext>
+          </FlashMessageContext>
+        </SettingsContext>
+      </FontsContextProvider>
     </LocalizationContextProvider>
   );
 }

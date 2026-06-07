@@ -45,6 +45,14 @@ export interface LexicalEditorConfig {
    * the change to every consumer via React context.
    */
   translate?: TranslateFn;
+  /**
+   * Injected font-family options for the toolbar font picker.
+   * When non-empty, replaces the built-in Latin font list entirely.
+   * Use `{value: '--separator--', name: ''}` to insert a visual divider
+   * between groups (e.g. between basic fonts and installed fonts).
+   * When omitted or an empty array, the built-in font list is used.
+   */
+  fonts?: {value: string; name: string}[];
 }
 
 /**

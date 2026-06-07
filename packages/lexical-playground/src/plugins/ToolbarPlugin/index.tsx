@@ -88,6 +88,7 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog, INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {useEquationDialogProvider} from '../../context/EquationDialogContext';
+import {FONT_SEPARATOR_VALUE, useFontFamilyOptions} from '../../context/FontsContext';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
   InsertImageDialog,
@@ -408,6 +409,8 @@ function FontDropDown({
   disabled?: boolean;
 }): JSX.Element {
   const t = useTranslate();
+  const injectedFonts = useFontFamilyOptions();
+
   const handleClick = useCallback(
     (option: string) => {
       editor.update(() => {
@@ -428,6 +431,11 @@ function FontDropDown({
       ? t('toolbar.ariaFontFamily', 'Formatting options for font family')
       : t('toolbar.ariaFontSize', 'Formatting options for font size');
 
+  const fontFamilyOptions: [string, string][] =
+    injectedFonts.length > 0
+      ? injectedFonts.map((f) => [f.value, f.name])
+      : FONT_FAMILY_OPTIONS;
+
   return (
     <DropDown
       disabled={disabled}
@@ -437,17 +445,22 @@ function FontDropDown({
         style === 'font-family' ? 'icon block-type font-family' : ''
       }
       buttonAriaLabel={buttonAriaLabel}>
-      {(style === 'font-family' ? FONT_FAMILY_OPTIONS : FONT_SIZE_OPTIONS).map(
-        ([option, text]) => (
-          <DropDownItem
-            className={`item ${dropDownActiveClass(value === option)} ${
-              style === 'font-size' ? 'fontsize-item' : ''
-            }`}
-            onClick={() => handleClick(option)}
-            key={option}>
-            <span className="text">{text}</span>
-          </DropDownItem>
-        ),
+      {(style === 'font-family' ? fontFamilyOptions : FONT_SIZE_OPTIONS).map(
+        ([option, text], idx) => {
+          if (option === FONT_SEPARATOR_VALUE) {
+            return <Divider key={`sep-${idx}`} />;
+          }
+          return (
+            <DropDownItem
+              className={`item ${dropDownActiveClass(value === option)} ${
+                style === 'font-size' ? 'fontsize-item' : ''
+              }`}
+              onClick={() => handleClick(option)}
+              key={option}>
+              <span className="text" style={style === 'font-family' ? {fontFamily: option} : undefined}>{text}</span>
+            </DropDownItem>
+          );
+        },
       )}
     </DropDown>
   );

@@ -24,6 +24,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
+import {useTranslate} from '../../context/LocalizationContext';
 import {
   ComponentPickerMenuItem,
   ComponentPickerOption,
@@ -49,6 +50,7 @@ export default function DraggableBlockPlugin({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [modal, showModal] = useModal();
+  const t = useTranslate();
   const menuRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +68,7 @@ export default function DraggableBlockPlugin({
   } | null>(null);
 
   const options = useMemo(() => {
-    const baseOptions = getBaseOptions(editor, showModal);
+    const baseOptions = getBaseOptions(editor, showModal, undefined, null, t);
 
     if (!queryString) {
       return baseOptions;
@@ -74,14 +76,14 @@ export default function DraggableBlockPlugin({
 
     const regex = new RegExp(queryString, 'i');
     return [
-      ...getDynamicOptions(editor, queryString),
+      ...getDynamicOptions(editor, queryString, t),
       ...baseOptions.filter(
         (option) =>
           regex.test(option.title) ||
           option.keywords.some((keyword) => regex.test(keyword)),
       ),
     ];
-  }, [editor, queryString, showModal]);
+  }, [editor, queryString, showModal, t]);
 
   useEffect(() => {
     if (isPickerOpen && searchInputRef.current) {
@@ -243,7 +245,7 @@ export default function DraggableBlockPlugin({
               }}>
               <input
                 className="component-picker-search"
-                placeholder="Filter blocks..."
+                placeholder={t('draggable.filterBlocks', 'Filter blocks...')}
                 value={queryString}
                 ref={searchInputRef}
                 onChange={(event) => setQueryString(event.target.value)}
@@ -274,7 +276,7 @@ export default function DraggableBlockPlugin({
         menuComponent={
           <div ref={menuRef} className="icon draggable-block-menu">
             <button
-              title="Click to add below"
+              title={t('draggable.addBelow', 'Click to add below')}
               className="icon icon-plus"
               onClick={openComponentPicker}
             />

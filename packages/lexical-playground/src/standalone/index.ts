@@ -39,6 +39,7 @@ import type {
   LexicalEditorInstance,
 } from './types';
 import PlaygroundEditorTheme from "../themes/PlaygroundEditorTheme";
+import {PLAYGROUND_TRANSFORMERS} from "../plugins/MarkdownTransformers/index";
 
 // Use buildEditorFromExtensions so the editor is tagged with builderSymbol.
 // This is required because ImageNode's caption editor uses NestedEditorExtension,
@@ -115,7 +116,7 @@ function fromHTML(html: string): string {
 
 function toMarkdown(input: EditorInput): string {
   const editor = resolveEditor(input);
-  return editor.read(() => $convertToMarkdownString(TRANSFORMERS));
+  return editor.read(() => $convertToMarkdownString([...TRANSFORMERS, ...PLAYGROUND_TRANSFORMERS]));
 }
 
 // ---------------------------------------------------------------------------
@@ -127,7 +128,7 @@ function fromMarkdown(md: string): string {
   const editor = CreateHeadlessEditor();
   editor.update(
     () => {
-      $convertFromMarkdownString(md, TRANSFORMERS);
+      $convertFromMarkdownString(md, [...TRANSFORMERS, ...PLAYGROUND_TRANSFORMERS]);
     },
     {discrete: true},
   );

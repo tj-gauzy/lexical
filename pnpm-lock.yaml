@@ -763,6 +763,9 @@ importers:
       '@lexical/hashtag':
         specifier: workspace:*
         version: link:../lexical-hashtag
+      '@lexical/headless':
+        specifier: workspace:*
+        version: link:../lexical-headless
       '@lexical/html':
         specifier: workspace:*
         version: link:../lexical-html
@@ -775,6 +778,9 @@ importers:
       '@lexical/mark':
         specifier: workspace:*
         version: link:../lexical-mark
+      '@lexical/markdown':
+        specifier: workspace:*
+        version: link:../lexical-markdown
       '@lexical/overflow':
         specifier: workspace:*
         version: link:../lexical-overflow

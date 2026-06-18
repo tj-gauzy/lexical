@@ -74,6 +74,7 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
   'mailto:',
   'sms:',
   'tel:',
+  '*'
 ]);
 
 /** @noInheritDoc */
@@ -186,7 +187,7 @@ export class LinkNode extends ElementNode {
     try {
       const parsedUrl = new URL(formatUrl(url));
 
-      if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
+      if (!SUPPORTED_URL_PROTOCOLS.has('*') && !SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
         return 'about:blank';
       }
     } catch {

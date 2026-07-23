@@ -179,9 +179,19 @@
     </div>
 
     <div class="section">
+      <h3>Callbacks · mentions</h3>
+      <label><input type="checkbox" id="chk-mentions" checked /> 注入 mock mentionLookup</label>
+      <div style="font-size:11px;color:#888;">
+        勾选后挂载的编辑器可用 <code>@</code> 触发候选（含中文标题）；
+        取消勾选验证「无 lookup 即惰性」。重新挂载生效。
+      </div>
+    </div>
+
+    <div class="section">
       <h3>setContent</h3>
       <textarea id="ta-state" placeholder='粘贴 EditorState JSON（由 onChange 第二个参数输出）'></textarea>
       <button id="btn-set-content">setContent</button>
+      <button id="btn-set-md">setContent (mention markdown 示例)</button>
     </div>
 
   </div>
@@ -214,6 +224,33 @@
   var chkAutoComp   = document.getElementById('chk-autocomplete');
   var chkCodeHl     = document.getElementById('chk-spellcheck');
   var chkSettings   = document.getElementById('chk-settings');
+  var chkMentions   = document.getElementById('chk-mentions');
+
+  // Mock candidates for the mention typeahead: three entity kinds with
+  // per-candidate icons (note '·' / notebook '≡' / reference '▤'), mixed
+  // CJK/Latin titles, an '@'-prefixed title for the round-trip edge case,
+  // and one entry WITHOUT icon to exercise the mentionIcon fallback.
+  var MOCK_ENTITIES = [
+    {id: 'note-001', name: '元认知', meta: '认知觉醒', type: 'note', icon: '·'},
+    {id: 'note-002', name: '刻意练习', meta: '认知觉醒', type: 'note', icon: '·'},
+    {id: 'note-004', name: '心流状态', meta: '心理学', type: 'note', icon: '·'},
+    {id: 'note-005', name: '@特殊标题', meta: '边界用例', type: 'note', icon: '·'},
+    {id: 'nb-001', name: '认知觉醒', meta: '主题', type: 'notebook', icon: '≡'},
+    {id: 'ref-001', name: '深度工作（书）', meta: '资料', type: 'reference', icon: '▤'},
+    {id: 'note-006', name: 'Feynman Technique', meta: 'Learning', type: 'note'},
+  ];
+
+  function mockMentionLookup(query) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var q = query.toLowerCase();
+        resolve(MOCK_ENTITIES.filter(function (m) {
+          return m.name.toLowerCase().indexOf(q) !== -1 ||
+                 (m.meta || '').toLowerCase().indexOf(q) !== -1;
+        }));
+      }, 200);
+    });
+  }
 
   function getConfig() {
     return {
@@ -270,16 +307,24 @@
       return;
     }
     try {
+      var callbacks = {
+        onChange: function (editor) {
+          addLog(editor);
+        },
+      };
+      if (chkMentions.checked) {
+        callbacks.mentionLookup = mockMentionLookup;
+        callbacks.onMentionClick = function (m) {
+          setStatus('mention 点击: ' + m.name + ' (type=' + m.type + ', id=' + (m.id || '无') + ')', true);
+        };
+        callbacks.mentionIcon = '·';
+      }
       editorInstance = window.LexicalEditor.mountLexicalEditor(
         container,
         getConfig(),
-        {
-          onChange: function (editor) {
-            addLog(editor);
-          },
-        }
+        callbacks
       );
-      setStatus('已挂载', true);
+      setStatus('已挂载' + (chkMentions.checked ? '（mentions 开）' : '（mentions 关）'), true);
     } catch (e) {
       setStatus('挂载失败: ' + e.message, false);
       console.error(e);
@@ -307,6 +352,24 @@
     try {
       editorInstance.setContent(json);
       setStatus('内容已设置', true);
+    } catch (e) {
+      setStatus('setContent 失败: ' + e.message, false);
+    }
+  });
+
+  // Feeds mention markdown through setContent to verify the import path:
+  // [@名](yzx://note/id) 剥前缀、纯 yzx 链接升级、[@@标题] 双 @ 往返、
+  // notebook/reference 两类深链的类型还原。
+  document.getElementById('btn-set-md').addEventListener('click', function () {
+    if (!editorInstance) { setStatus('请先挂载编辑器', false); return; }
+    var md = '关于 [@元认知](yzx://note/note-001) 的展开，参见' +
+      ' [刻意练习](yzx://note/note-002) 与 [@@特殊标题](yzx://note/note-005)，' +
+      '出自主题 [@认知觉醒](yzx://notebook/nb-001) 与资料' +
+      ' [@深度工作（书）](yzx://reference/ref-001)，' +
+      '普通链接 [lexical](https://lexical.dev) 应保持为链接。';
+    try {
+      editorInstance.setContent(md);
+      setStatus('mention markdown 已注入', true);
     } catch (e) {
       setStatus('setContent 失败: ' + e.message, false);
     }

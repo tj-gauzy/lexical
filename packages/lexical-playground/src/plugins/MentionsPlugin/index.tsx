@@ -15,10 +15,35 @@ import {
   MenuTextMatch,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {TextNode} from 'lexical';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {
+  $getNearestNodeFromDOMNode,
+  CLICK_COMMAND,
+  COMMAND_PRIORITY_LOW,
+  TextNode,
+} from 'lexical';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {$createMentionNode} from '../../nodes/MentionNode';
+import {
+  type MentionLookupValue,
+  useMentionLookupProvider,
+} from '../../context/MentionLookupContext';
+import {
+  $createMentionNode,
+  $isMentionNode,
+  type MentionEntityType,
+} from '../../nodes/MentionNode';
+
+/**
+ * Internal menu entry. Host-supplied candidates always carry an id
+ * (MentionCandidate); the playground's dummy dataset provides names only.
+ */
+type MentionEntry = {
+  id?: string;
+  name: string;
+  meta?: string;
+  type?: MentionEntityType;
+  icon?: string;
+};
 
 const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
@@ -49,8 +74,17 @@ const VALID_JOINS =
 
 const LENGTH_LIMIT = 75;
 
+// Characters accepted as the context preceding an '@' trigger. Latin prose
+// always separates a mention with whitespace, but CJK prose has no word
+// spacing — "参见@节点" must trigger too — so CJK ideographs, CJK punctuation
+// and full-width forms are valid leading context as well. Letters/digits stay
+// excluded so email-like text ("a@b") never triggers.
+const TRIGGER_LEAD =
+  '(^|\\s|\\(|[\\u3000-\\u303f\\u4e00-\\u9fff\\uff00-\\uffef])';
+
 const AtSignMentionsRegex = new RegExp(
-  '(^|\\s|\\()(' +
+  TRIGGER_LEAD +
+    '(' +
     '[' +
     TRIGGERS +
     ']' +
@@ -68,7 +102,8 @@ const ALIAS_LENGTH_LIMIT = 50;
 
 // Regex used to match alias.
 const AtSignMentionsRegexAliasRegex = new RegExp(
-  '(^|\\s|\\()(' +
+  TRIGGER_LEAD +
+    '(' +
     '[' +
     TRIGGERS +
     ']' +
@@ -82,8 +117,6 @@ const AtSignMentionsRegexAliasRegex = new RegExp(
 
 // At most, 5 suggestions are shown in the popup.
 const SUGGESTION_LIST_LENGTH_LIMIT = 5;
-
-const mentionsCache = new Map();
 
 const dummyMentionsData = [
   'Aayla Secura',
@@ -502,31 +535,67 @@ const dummyLookupService = {
   },
 };
 
-function useMentionLookupService(mentionString: string | null) {
-  const [results, setResults] = useState<Array<string>>([]);
+function useMentionLookupService(
+  mentionString: string | null,
+  provider: MentionLookupValue | undefined,
+) {
+  const [results, setResults] = useState<Array<MentionEntry>>([]);
+
+  // Per-editor-instance cache (the module-level Map it replaces was shared
+  // across every editor and could never be invalidated). Reset whenever the
+  // host swaps its lookup implementation.
+  const cacheRef = useRef<Map<string, Array<MentionEntry>>>(new Map());
+  const lookupRef = useRef(provider?.lookup);
+  if (lookupRef.current !== provider?.lookup) {
+    lookupRef.current = provider?.lookup;
+    cacheRef.current = new Map();
+  }
 
   useEffect(() => {
-    const cachedResults = mentionsCache.get(mentionString);
-
     if (mentionString == null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }
 
-    if (cachedResults === null) {
-      return;
-    } else if (cachedResults !== undefined) {
+    const cache = cacheRef.current;
+    const cachedResults = cache.get(mentionString);
+    if (cachedResults !== undefined) {
       setResults(cachedResults);
       return;
     }
 
-    mentionsCache.set(mentionString, null);
-    dummyLookupService.search(mentionString, (newResults) => {
-      mentionsCache.set(mentionString, newResults);
-      setResults(newResults);
-    });
-  }, [mentionString]);
+    let cancelled = false;
+    if (provider) {
+      provider
+        .lookup(mentionString)
+        .then((candidates) => {
+          if (cancelled) {
+            return;
+          }
+          cache.set(mentionString, candidates);
+          setResults(candidates);
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            console.error('[MentionsPlugin] mention lookup failed:', error);
+          }
+        });
+    } else {
+      // No provider mounted at all (playground dev app) — dummy dataset.
+      dummyLookupService.search(mentionString, (names) => {
+        if (cancelled) {
+          return;
+        }
+        const candidates = names.map((name): MentionEntry => ({name}));
+        cache.set(mentionString, candidates);
+        setResults(candidates);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [mentionString, provider]);
 
   return results;
 }
@@ -562,42 +631,101 @@ function getPossibleQueryMatch(text: string): MenuTextMatch | null {
 }
 
 class MentionTypeaheadOption extends MenuOption {
+  id?: string;
   name: string;
+  meta?: string;
+  entityType?: MentionEntityType;
   picture: JSX.Element;
 
-  constructor(name: string, picture: JSX.Element) {
-    super(name);
-    this.name = name;
+  constructor(entry: MentionEntry, picture: JSX.Element) {
+    super(entry.id ?? entry.name);
+    this.id = entry.id;
+    this.name = entry.name;
+    this.meta = entry.meta;
+    this.entityType = entry.type;
     this.picture = picture;
     this.title = (
       <>
-        {picture} {name}
+        {picture} {entry.name}
+        {entry.meta ? (
+          <span className="mention-meta">{entry.meta}</span>
+        ) : null}
       </>
     );
   }
 }
 
 export default function NewMentionsPlugin(): JSX.Element | null {
+  const provider = useMentionLookupProvider();
+
+  // null = standalone mount without a host lookup: the feature is inert.
+  // undefined = no provider in the tree (playground dev app): dummy fallback.
+  if (provider === null) {
+    return null;
+  }
+
+  return <MentionsPluginImpl provider={provider} />;
+}
+
+function MentionsPluginImpl({
+  provider,
+}: {
+  provider: MentionLookupValue | undefined;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   const [queryString, setQueryString] = useState<string | null>(null);
 
-  const results = useMentionLookupService(queryString);
+  const results = useMentionLookupService(queryString, provider);
 
   const checkForSlashTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
     minLength: 0,
   });
 
-  const options = useMemo(
-    () =>
-      results
-        .map(
-          (result) =>
-            new MentionTypeaheadOption(result, <i className="icon user" />),
-        )
-        .slice(0, SUGGESTION_LIST_LENGTH_LIMIT),
-    [results],
-  );
+  const onMentionClick = provider?.onClick;
+  useEffect(() => {
+    if (!onMentionClick) {
+      return;
+    }
+    return editor.registerCommand<MouseEvent>(
+      CLICK_COMMAND,
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof Node)) {
+          return false;
+        }
+        const node = $getNearestNodeFromDOMNode(target);
+        if ($isMentionNode(node)) {
+          onMentionClick({
+            id: node.getMentionId(),
+            name: node.getMentionName(),
+            type: node.getMentionEntityType(),
+          });
+        }
+        // Never claim the event — caret placement etc. proceeds as usual.
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor, onMentionClick]);
+
+  const options = useMemo(() => {
+    // Icon resolution per entry: candidate icon → feature-level icon →
+    // stock user avatar. All host icons are plain text symbols (strings
+    // cross the UMD boundary; JSX cannot).
+    const fallbackIcon = provider?.icon;
+    const iconFor = (entry: MentionEntry) => {
+      const symbol = entry.icon ?? fallbackIcon;
+      return symbol ? (
+        <span className="icon mention-icon">{symbol}</span>
+      ) : (
+        <i className="icon user" />
+      );
+    };
+    return results
+      .map((result) => new MentionTypeaheadOption(result, iconFor(result)))
+      .slice(0, SUGGESTION_LIST_LENGTH_LIMIT);
+  }, [results, provider?.icon]);
 
   const onSelectOption = useCallback(
     (
@@ -606,7 +734,14 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       closeMenu: () => void,
     ) => {
       editor.update(() => {
-        const mentionNode = $createMentionNode(selectedOption.name);
+        // mentionName keeps the bare name (source of truth); the visible text
+        // carries the '@' prefix so editor, markdown and HTML read the same.
+        const mentionNode = $createMentionNode(
+          selectedOption.name,
+          '@' + selectedOption.name,
+          selectedOption.id,
+          selectedOption.entityType,
+        );
         if (nodeToReplace) {
           nodeToReplace.replace(mentionNode);
         }

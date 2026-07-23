@@ -48,6 +48,12 @@ import {
   EquationNode,
 } from '../../nodes/EquationNode';
 import {$createImageNode, $isImageNode, ImageNode} from '../../nodes/ImageNode';
+import {
+  $createMentionNode,
+  $isMentionNode,
+  isMentionEntityType,
+  MentionNode,
+} from '../../nodes/MentionNode';
 import {$createTweetNode, $isTweetNode, TweetNode} from '../../nodes/TweetNode';
 import emojiList from '../../utils/emoji-list';
 
@@ -128,6 +134,51 @@ export const EQUATION: TextMatchTransformer = {
     textNode.replace(equationNode);
   },
   trigger: '$',
+  type: 'text-match',
+};
+
+/**
+ * Mention ⇄ markdown as a standard link whose text carries the '@' display
+ * prefix: `[@name](yzx://<entityType>/<id>)` — aligned with the app's
+ * existing yzx deep-link protocol (note / reference / notebook), so exports
+ * degrade to clickable links.
+ *
+ * Import: the `@?` sits OUTSIDE the capture group, stripping exactly the one
+ * leading '@' added on export (titles that themselves start with '@' export
+ * as `[@@title]` and round-trip losslessly). Plain yzx links of the three
+ * kinds — e.g. pasted "复制回链" content — match too and upgrade to mentions.
+ */
+export const MENTION: TextMatchTransformer = {
+  dependencies: [MentionNode],
+  export: (node) => {
+    if (!$isMentionNode(node)) {
+      return null;
+    }
+    const id = node.getMentionId();
+    if (!id) {
+      // Legacy mention without an id: fall through to the plain-text branch
+      // of the exporter instead of producing a dead link.
+      return null;
+    }
+    // ']' would break the link-text syntax and '|' breaks TABLE cell export
+    // (cells are split on raw '|' at import); note titles are display
+    // snapshots (the id is the source of truth), so spaces are acceptable.
+    const name = node.getMentionName().replace(/[\]|]/g, ' ');
+    return `[@${name}](yzx://${node.getMentionEntityType()}/${id})`;
+  },
+  importRegExp: /\[@?([^\]]*)\]\(yzx:\/\/(note|reference|notebook)\/([^)\s]+)\)/,
+  regExp: /\[@?([^\]]*)\]\(yzx:\/\/(note|reference|notebook)\/([^)\s]+)\)$/,
+  replace: (textNode, match) => {
+    const [, name, entityType, id] = match;
+    const mentionNode = $createMentionNode(
+      name,
+      '@' + name,
+      id,
+      isMentionEntityType(entityType) ? entityType : undefined,
+    );
+    textNode.replace(mentionNode);
+  },
+  trigger: ')',
   type: 'text-match',
 };
 
@@ -313,6 +364,10 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   IMAGE,
   EMOJI,
   EQUATION,
+  // MENTION must precede TEXT_MATCH_TRANSFORMERS (which contains LINK):
+  // findOutermostTextMatchTransformer resolves equal-position matches by
+  // array order, and both regexes match a `[@name](yzx://note/…)` link.
+  MENTION,
   TWEET,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,

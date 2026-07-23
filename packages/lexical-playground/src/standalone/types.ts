@@ -75,6 +75,33 @@ export type EquationDialogProvider = (
   options: {initialEquation?: string; initialInline?: boolean},
 ) => Promise<EquationDialogResult | null>;
 
+import type {MentionEntityType} from '../nodes/MentionNode';
+
+export type {MentionEntityType};
+
+/**
+ * Autocomplete candidate returned by the host's mention lookup.
+ */
+export interface MentionCandidate {
+  /** Referenced entity id (e.g. note-node/reference/notebook guid). */
+  id: string;
+  /** Display name, without the leading '@'. */
+  name: string;
+  /**
+   * Entity kind — drives the yzx:// deep-link path in markdown export and is
+   * echoed back through onMentionClick. Defaults to 'note'.
+   */
+  type?: MentionEntityType;
+  /**
+   * Per-candidate icon symbol (plain text, e.g. '·' / '≡' / '▤'). Overrides
+   * the feature-level `mentionIcon`; falls back to it (then to the built-in
+   * avatar) when omitted.
+   */
+  icon?: string;
+  /** Optional secondary text shown next to the name in the dropdown. */
+  meta?: string;
+}
+
 export interface LexicalEditorCallbacks {
   /**
    * Fired on every content change.
@@ -82,6 +109,27 @@ export interface LexicalEditorCallbacks {
    * @param editorState  JSON serialization of the Lexical EditorState.
    */
   onChange?: (editor: LexicalEditor) => void;
+  /**
+   * Enables the '@' mention typeahead and supplies its candidates. Called as
+   * the user types after '@'. When omitted the mentions feature is inert in
+   * standalone mode (no dummy-data fallback outside the playground dev app).
+   */
+  mentionLookup?: (query: string) => Promise<MentionCandidate[]>;
+  /**
+   * Fired when a mention node is clicked inside the editor. `id` is absent on
+   * legacy mentions created before ids existed; `type` defaults to 'note'.
+   */
+  onMentionClick?: (mention: {
+    id?: string;
+    name: string;
+    type: MentionEntityType;
+  }) => void;
+  /**
+   * Text symbol shown as the icon of each mention dropdown item (e.g. '·').
+   * Static display config read at mount alongside mentionLookup; when omitted
+   * the built-in user avatar icon is used.
+   */
+  mentionIcon?: string;
   /**
    * Override the built-in equation insertion dialog. The host renders its own
    * UI (e.g. a MathLive editor inside the app's modal system) and resolves

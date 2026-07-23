@@ -55,6 +55,7 @@ import MentionsPlugin from '../plugins/MentionsPlugin';
 import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
 import {KeywordsExtension} from './KeywordNode';
+import {MentionNode} from './MentionNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
@@ -83,7 +84,10 @@ const CaptionEditorExtension = defineExtension({
   ],
   name: '@lexical/playground/ImageNodeCaption',
   namespace: 'Playground/ImageNodeCaption',
-  nodes: [EmojiNode],
+  // MentionNode must be registered here: the caption editor mounts its own
+  // MentionsPlugin (decorators above) and $createMentionNode throws an
+  // unregistered-node invariant otherwise when a candidate is selected.
+  nodes: [EmojiNode, MentionNode],
 });
 
 export interface ImagePayload {

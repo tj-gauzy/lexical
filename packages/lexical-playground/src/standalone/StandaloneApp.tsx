@@ -16,7 +16,7 @@ import {HistoryExtension} from '@lexical/history';
 import {$generateNodesFromDOM} from '@lexical/html';
 import {ClickableLinkExtension, LinkExtension} from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
-import {$convertFromMarkdownString, TRANSFORMERS} from '@lexical/markdown';
+import {$convertFromMarkdownString} from '@lexical/markdown';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -27,6 +27,7 @@ import {type JSX, type MutableRefObject, type RefObject, useEffect, useMemo, use
 import {buildHTMLConfig} from '../buildHTMLConfig';
 import {EquationDialogProviderContext} from '../context/EquationDialogContext';
 import {FlashMessageContext} from '../context/FlashMessageContext';
+import {MentionLookupProviderContext} from '../context/MentionLookupContext';
 import {FontsContextProvider} from '../context/FontsContext';
 import {LocalizationContextProvider} from '../context/LocalizationContext';
 import {SettingsContext, useSettings} from '../context/SettingsContext';
@@ -36,6 +37,7 @@ import {KeywordsExtension} from '../nodes/KeywordNode';
 import PlaygroundNodes from '../nodes/PlaygroundNodes';
 import {PlaygroundAutoLinkExtension} from '../plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from '../plugins/CodeHighlightExtension';
+import {PLAYGROUND_TRANSFORMERS} from '../plugins/MarkdownTransformers';
 import {CollapsibleExtension} from '../plugins/CollapsibleExtension';
 import {DateTimeExtension} from '../plugins/DateTimeExtension';
 import {DragDropPasteExtension} from '../plugins/DragDropPasteExtension';
@@ -142,7 +144,10 @@ function SetContentPlugin({
           });
         } else {
           editor.update(() => {
-            $convertFromMarkdownString(trimmed, TRANSFORMERS);
+            // PLAYGROUND_TRANSFORMERS (not the stock TRANSFORMERS) so custom
+            // text-match nodes — mentions in particular — survive markdown
+            // input, matching the to/fromMarkdown exports in index.ts.
+            $convertFromMarkdownString(trimmed, PLAYGROUND_TRANSFORMERS);
           });
         }
       } catch (e) {
@@ -261,20 +266,36 @@ export default function StandaloneApp({
   // attempt to re-apply it to an already-mounted editor.
   const initialEditorStateRef = useRef(initialEditorState);
 
+  // null (vs undefined) tells MentionsPlugin this is a standalone mount with
+  // no host lookup — inert, never the playground's dummy dataset.
+  const mentionLookup = useMemo(
+    () =>
+      callbacks?.mentionLookup
+        ? {
+            icon: callbacks.mentionIcon,
+            lookup: callbacks.mentionLookup,
+            onClick: callbacks.onMentionClick,
+          }
+        : null,
+    [callbacks?.mentionLookup, callbacks?.onMentionClick, callbacks?.mentionIcon],
+  );
+
   return (
     <LocalizationContextProvider translate={translate}>
       <FontsContextProvider fonts={fonts}>
         <SettingsContext initialSettings={components}>
           <FlashMessageContext>
             <EquationDialogProviderContext value={callbacks?.equationDialog}>
-              <StandaloneEditorInner
-                showSettingsPanel={showSettingsPanel}
-                initialEditorStateRef={initialEditorStateRef}
-                contentSetterRef={contentSetterRef}
-                lexicalEditorRef={lexicalEditorRef}
-                callbacks={callbacks}
-                plugins={plugins}
-              />
+              <MentionLookupProviderContext value={mentionLookup}>
+                <StandaloneEditorInner
+                  showSettingsPanel={showSettingsPanel}
+                  initialEditorStateRef={initialEditorStateRef}
+                  contentSetterRef={contentSetterRef}
+                  lexicalEditorRef={lexicalEditorRef}
+                  callbacks={callbacks}
+                  plugins={plugins}
+                />
+              </MentionLookupProviderContext>
             </EquationDialogProviderContext>
           </FlashMessageContext>
         </SettingsContext>

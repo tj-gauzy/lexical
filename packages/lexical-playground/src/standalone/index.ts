@@ -24,7 +24,6 @@ import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
-  TRANSFORMERS,
 } from '@lexical/markdown';
 import {$getRoot, $insertNodes, defineExtension} from 'lexical';
 import type {LexicalEditor, SerializedEditorState} from 'lexical';
@@ -116,7 +115,11 @@ function fromHTML(html: string): string {
 
 function toMarkdown(input: EditorInput): string {
   const editor = resolveEditor(input);
-  return editor.read(() => $convertToMarkdownString([...TRANSFORMERS, ...PLAYGROUND_TRANSFORMERS]));
+  // PLAYGROUND_TRANSFORMERS alone — it already spreads every stock transformer
+  // group AFTER the custom ones. Prepending stock TRANSFORMERS would put LINK
+  // ahead of MENTION, and equal-position text-match ties resolve by array
+  // order, silently demoting every mention import to a plain LinkNode.
+  return editor.read(() => $convertToMarkdownString(PLAYGROUND_TRANSFORMERS));
 }
 
 // ---------------------------------------------------------------------------
@@ -128,7 +131,9 @@ function fromMarkdown(md: string): string {
   const editor = CreateHeadlessEditor();
   editor.update(
     () => {
-      $convertFromMarkdownString(md, [...TRANSFORMERS, ...PLAYGROUND_TRANSFORMERS]);
+      // See toMarkdown: PLAYGROUND_TRANSFORMERS only, so MENTION keeps its
+      // documented precedence over the stock LINK transformer.
+      $convertFromMarkdownString(md, PLAYGROUND_TRANSFORMERS);
     },
     {discrete: true},
   );

@@ -15,6 +15,7 @@ import {HTMLInputTypeAttribute} from 'react';
 
 type Props = Readonly<{
   'data-test-id'?: string;
+  action?: JSX.Element;
   label: string;
   onChange: (val: string) => void;
   placeholder?: string;
@@ -23,6 +24,7 @@ type Props = Readonly<{
 }>;
 
 export default function TextInput({
+  action,
   label,
   value,
   onChange,
@@ -43,6 +45,7 @@ export default function TextInput({
         }}
         data-test-id={dataTestId}
       />
+      {action}
     </div>
   );
 }

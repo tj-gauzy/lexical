@@ -12,7 +12,7 @@ import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
 import * as React from 'react';
-import {useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {isKeyboardInput} from '../utils/focusUtils';
 import TextInput from './TextInput';
@@ -50,6 +50,45 @@ const basicColors = [
   '#ffffff',
 ];
 
+const FAVORITE_COLORS_STORAGE_KEY = 'LexicalColors';
+
+function getFavoriteColor(color: string): string | null {
+  return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : null;
+}
+
+function getInitialFavoriteColors(): string[] {
+  if (typeof window === 'undefined') {
+    return basicColors;
+  }
+
+  try {
+    const storedColors = window.localStorage.getItem(
+      FAVORITE_COLORS_STORAGE_KEY,
+    );
+
+    if (storedColors) {
+      const colors = JSON.parse(storedColors);
+
+      if (Array.isArray(colors)) {
+        return Array.from(
+          new Set(
+            colors
+              .filter(
+                (color): color is string =>
+                  typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color),
+              )
+              .map((color) => color.toLowerCase()),
+          ),
+        );
+      }
+    }
+  } catch {
+    // Use the default colors when localStorage is unavailable or malformed.
+  }
+
+  return basicColors;
+}
+
 const WIDTH = 214;
 const HEIGHT = 150;
 
@@ -61,7 +100,21 @@ export default function ColorPicker({
   const [inputColor, setInputColor] = useState(
     transformColor('hex', color).hex,
   );
+  const [favoriteColors, setFavoriteColors] = useState<string[]>(
+    getInitialFavoriteColors,
+  );
   const innerDivRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FAVORITE_COLORS_STORAGE_KEY,
+        JSON.stringify(favoriteColors),
+      );
+    } catch {
+      // Ignore storage failures and keep the current favorites in memory.
+    }
+  }, [favoriteColors]);
 
   const saturationPosition = useMemo(
     () => ({
@@ -123,16 +176,63 @@ export default function ColorPicker({
     emitOnChange(newColor.hex, isKeyboardInput(e));
   };
 
+  const toggleFavoriteColor = () => {
+    const favoriteColor = getFavoriteColor(inputColor);
+
+    if (!favoriteColor) {
+      return;
+    }
+
+    setFavoriteColors((colors) =>
+      colors.includes(favoriteColor)
+        ? colors.filter((color) => color !== favoriteColor)
+        : [...colors, favoriteColor],
+    );
+  };
+
+  const favoriteColor = getFavoriteColor(inputColor);
+  const isFavorite =
+    favoriteColor !== null && favoriteColors.includes(favoriteColor);
+
   return (
     <div
       className="color-picker-wrapper"
       style={{width: WIDTH}}
       ref={innerDivRef}>
-      <TextInput label="Hex" onChange={onSetHex} value={inputColor} />
-      <div className="color-picker-basic-color">
-        {basicColors.map((basicColor) => (
+      <TextInput
+        action={
           <button
-            className={basicColor === selfColor.hex ? 'active' : ''}
+            aria-label={
+              isFavorite
+                ? 'Remove color from favorites'
+                : 'Add color to favorites'
+            }
+            aria-pressed={isFavorite}
+            className="color-picker-favorite-action"
+            onClick={toggleFavoriteColor}
+            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            type="button">
+            <svg
+              aria-hidden="true"
+              className="color-picker-favorite-icon"
+              viewBox="0 0 24 24">
+              <path
+                d="m12 2.5 2.94 5.95 6.56.95-4.75 4.63 1.12 6.54L12 17.48l-5.87 3.09 1.12-6.54L2.5 9.4l6.56-.95L12 2.5Z"
+                fill={isFavorite ? 'currentColor' : 'none'}
+              />
+            </svg>
+          </button>
+        }
+        label="Hex"
+        onChange={onSetHex}
+        value={inputColor}
+      />
+      <div className="color-picker-basic-color">
+        {favoriteColors.map((basicColor) => (
+          <button
+            className={
+              basicColor === selfColor.hex.toLowerCase() ? 'active' : ''
+            }
             key={basicColor}
             style={{backgroundColor: basicColor}}
             onClick={(e) => onBasicColorClick(e, basicColor)}

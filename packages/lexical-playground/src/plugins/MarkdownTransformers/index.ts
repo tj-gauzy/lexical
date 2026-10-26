@@ -18,6 +18,7 @@ import {
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
   MULTILINE_ELEMENT_TRANSFORMERS,
+  MultilineElementTransformer,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -117,6 +118,37 @@ export const EMOJI: TextMatchTransformer = {
   type: 'text-match',
 };
 
+export const BLOCK_EQUATION: MultilineElementTransformer = {
+  dependencies: [EquationNode],
+  // Block equations are top-level decorators, so a text-match exporter alone
+  // would be skipped and only their raw LaTeX text would be exported.
+  export: (node) => {
+    if (!$isEquationNode(node) || node.isInline()) {
+      return null;
+    }
+
+    return `$$\n${node.getEquation()}\n$$`;
+  },
+  regExpStart: /^[ \t]*\$\$(?!\$)/,
+  regExpEnd: /\$\$[ \t]*$/,
+  replace: (
+    rootNode,
+    _children,
+    _startMatch,
+    _endMatch,
+    linesInBetween,
+    isImport,
+  ) => {
+    const equation = linesInBetween?.join('\n').trim();
+    if (!isImport || !equation) {
+      return false;
+    }
+
+    rootNode.append($createEquationNode(equation, false));
+  },
+  type: 'multiline-element',
+};
+
 export const EQUATION: TextMatchTransformer = {
   dependencies: [EquationNode],
   export: (node) => {
@@ -124,7 +156,9 @@ export const EQUATION: TextMatchTransformer = {
       return null;
     }
 
-    return `$${node.getEquation()}$`;
+    return node.isInline()
+      ? `$${node.getEquation()}$`
+      : `$$\n${node.getEquation()}\n$$`;
   },
   importRegExp: /\$([^$]+?)\$/,
   regExp: /\$([^$]+?)\$$/,
@@ -363,6 +397,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   HR,
   IMAGE,
   EMOJI,
+  BLOCK_EQUATION,
   EQUATION,
   // MENTION must precede TEXT_MATCH_TRANSFORMERS (which contains LINK):
   // findOutermostTextMatchTransformer resolves equal-position matches by

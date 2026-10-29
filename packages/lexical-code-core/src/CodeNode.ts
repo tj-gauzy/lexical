@@ -183,6 +183,17 @@ export class CodeNode extends ElementNode {
     const element = document.createElement('pre');
     addClassNamesToElement(element, editor._config.theme.code);
     element.setAttribute('spellcheck', 'false');
+
+    // Static exports do not run the highlighter's DOM mutation listener.
+    let gutter = '1';
+    let lineNumber = 1;
+    for (const child of this.getChildren()) {
+      if ($isLineBreakNode(child)) {
+        gutter += '\n' + ++lineNumber;
+      }
+    }
+    element.setAttribute('data-gutter', gutter);
+
     const language = this.getLanguage();
     if (language) {
       element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);

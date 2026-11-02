@@ -9,26 +9,35 @@
 import type {JSX} from 'react';
 
 import * as React from 'react';
-import {useCallback, useMemo, useState} from 'react';
+import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 
 import Modal from '../ui/Modal';
+
+// An optional owner can close its dialogs without recreating their components.
+export const ModalResetContext = createContext(0);
 
 export default function useModal(): [
   JSX.Element | null,
   (title: string, showModal: (onClose: () => void) => JSX.Element) => void,
 ] {
+  const resetKey = useContext(ModalResetContext);
   const [modalContent, setModalContent] = useState<null | {
+    resetKey: number;
     closeOnClickOutside: boolean;
     content: JSX.Element;
     title: string;
   }>(null);
 
   const onClose = useCallback(() => {
-    setModalContent(null);
-  }, []);
+    setModalContent(current => current?.resetKey === resetKey ? null : current);
+  }, [resetKey]);
+
+  useEffect(() => {
+    setModalContent(current => current?.resetKey === resetKey ? current : null);
+  }, [resetKey]);
 
   const modal = useMemo(() => {
-    if (modalContent === null) {
+    if (modalContent === null || modalContent.resetKey !== resetKey) {
       return null;
     }
     const {title, content, closeOnClickOutside} = modalContent;
@@ -40,7 +49,7 @@ export default function useModal(): [
         {content}
       </Modal>
     );
-  }, [modalContent, onClose]);
+  }, [modalContent, onClose, resetKey]);
 
   const showModal = useCallback(
     (
@@ -50,12 +59,13 @@ export default function useModal(): [
       closeOnClickOutside = false,
     ) => {
       setModalContent({
+        resetKey,
         closeOnClickOutside,
         content: getContent(onClose),
         title,
       });
     },
-    [onClose],
+    [onClose, resetKey],
   );
 
   return [modal, showModal];

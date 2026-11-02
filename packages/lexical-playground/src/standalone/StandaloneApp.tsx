@@ -127,31 +127,27 @@ function SetContentPlugin({
 
   useEffect(() => {
     setterRef.current = (state: string | object) => {
-      try {
-        if (typeof state === 'object' && state !== null) {
-          editor.setEditorState(editor.parseEditorState(state as SerializedEditorState));
-          return;
-        }
-        const trimmed = (state as string).trim();
-        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-          editor.setEditorState(editor.parseEditorState(trimmed));
-        } else if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
-          editor.update(() => {
-            const dom = new DOMParser().parseFromString(trimmed, 'text/html');
-            const nodes = $generateNodesFromDOM(editor, dom);
-            $getRoot().clear().select();
-            $insertNodes(nodes);
-          });
-        } else {
-          editor.update(() => {
-            // PLAYGROUND_TRANSFORMERS (not the stock TRANSFORMERS) so custom
-            // text-match nodes — mentions in particular — survive markdown
-            // input, matching the to/fromMarkdown exports in index.ts.
-            $convertFromMarkdownString(trimmed, PLAYGROUND_TRANSFORMERS);
-          });
-        }
-      } catch (e) {
-        console.error('[LexicalEditor] Failed to set editor state:', e);
+      if (typeof state === 'object' && state !== null) {
+        editor.setEditorState(editor.parseEditorState(state as SerializedEditorState));
+        return;
+      }
+      const trimmed = (state as string).trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        editor.setEditorState(editor.parseEditorState(trimmed));
+      } else if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
+        editor.update(() => {
+          const dom = new DOMParser().parseFromString(trimmed, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().clear().select();
+          $insertNodes(nodes);
+        });
+      } else {
+        editor.update(() => {
+          // PLAYGROUND_TRANSFORMERS (not the stock TRANSFORMERS) so custom
+          // text-match nodes — mentions in particular — survive markdown
+          // input, matching the to/fromMarkdown exports in index.ts.
+          $convertFromMarkdownString(trimmed, PLAYGROUND_TRANSFORMERS);
+        });
       }
     };
     return () => {
@@ -187,6 +183,8 @@ function StandaloneEditorInner({
     settings: {isCollab, isRichText, measureTypingPerf},
   } = useSettings();
 
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
   const app = useMemo(
     () =>
       defineExtension({
@@ -197,6 +195,9 @@ function StandaloneEditorInner({
           : (initialEditorStateRef.current ?? undefined),
         dependencies: [
           AppExtension,
+          configExtension(DragDropPasteExtension, {
+            onImport: (task, cancel) => callbacksRef.current?.onImport?.(task, cancel),
+          }),
           configExtension(HistoryExtension, {disabled: isCollab}),
           isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
         ],

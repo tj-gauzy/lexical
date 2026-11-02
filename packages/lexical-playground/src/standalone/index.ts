@@ -25,12 +25,13 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from '@lexical/markdown';
-import {$getRoot, $insertNodes, defineExtension} from 'lexical';
+import {$getRoot, $insertNodes, CLEAR_HISTORY_COMMAND, defineExtension} from 'lexical';
 import type {LexicalEditor, SerializedEditorState} from 'lexical';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 
 import PlaygroundNodes from '../nodes/PlaygroundNodes';
+import {ModalResetContext} from '../hooks/useModal';
 import StandaloneApp from './StandaloneApp';
 import type {
   LexicalEditorCallbacks,
@@ -152,7 +153,8 @@ function mountLexicalEditor(
   const root = createRoot(container);
 
   let currentConfig = config;
-  let currentCallbacks = callbacks;
+  const currentCallbacks = callbacks;
+  let dialogResetKey = 0;
 
   // Populated by SetContentPlugin once the Lexical composer context is ready.
   const contentSetterRef: React.MutableRefObject<
@@ -166,12 +168,14 @@ function mountLexicalEditor(
 
   function render() {
     root.render(
-      React.createElement(StandaloneApp, {
-        callbacks: currentCallbacks,
-        config: currentConfig,
-        contentSetterRef,
-        lexicalEditorRef,
-      }),
+      React.createElement(ModalResetContext.Provider, {value: dialogResetKey},
+        React.createElement(StandaloneApp, {
+          callbacks: currentCallbacks,
+          config: currentConfig,
+          contentSetterRef,
+          lexicalEditorRef,
+        }),
+      ),
     );
   }
 
@@ -185,7 +189,17 @@ function mountLexicalEditor(
       return lexicalEditorRef.current;
     },
     setContent(editorState: string | object) {
-      contentSetterRef.current?.(editorState);
+      if (!contentSetterRef.current) throw new Error('Lexical editor is not ready');
+      contentSetterRef.current(editorState);
+    },
+    clearHistory(): void {
+      const editor = lexicalEditorRef.current;
+      if (!editor) throw new Error('Lexical editor is not ready');
+      editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    },
+    closeDialogs(): void {
+      dialogResetKey += 1;
+      render();
     },
     update(newConfig) {
       currentConfig = {...currentConfig, ...newConfig};

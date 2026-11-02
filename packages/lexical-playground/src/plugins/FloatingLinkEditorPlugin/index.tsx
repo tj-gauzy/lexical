@@ -120,6 +120,16 @@ function FloatingLinkEditor({
 
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
+    // Loading another EditorState clears selection, even if the old link input
+    // still owns DOM focus. Never retain a toolbar or selection from that state.
+    if (selection === null) {
+      setIsLink(false);
+      setIsLinkEditMode(false);
+      setLastSelection(null);
+      setLinkUrl('');
+      setEditedLinkUrl('https://');
+      return true;
+    }
     if ($isRangeSelection(selection)) {
       const linkNode = $getSelectedLinkNode(selection);
       if (linkNode) {
@@ -185,7 +195,7 @@ function FloatingLinkEditor({
     }
 
     return true;
-  }, [editor, setIsLinkEditMode, isLinkEditMode, linkUrl, refs]);
+  }, [editor, setIsLink, setIsLinkEditMode, isLinkEditMode, linkUrl, refs]);
 
   useEffect(() => {
     return mergeRegister(
@@ -424,6 +434,9 @@ function useFloatingLinkEditorToolbar(
         } else {
           setIsLink(false);
         }
+      } else {
+        setIsLink(false);
+        setIsLinkEditMode(false);
       }
     }
     return mergeRegister(
@@ -458,7 +471,7 @@ function useFloatingLinkEditorToolbar(
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor]);
+  }, [editor, setIsLinkEditMode]);
 
   return createPortal(
     <FloatingLinkEditor

@@ -103,6 +103,8 @@ export interface MentionCandidate {
 }
 
 export interface LexicalEditorCallbacks {
+  /** A paste/drop import started. The host may observe it or cancel insertion. */
+  onImport?: (task: Promise<void>, cancel: () => void) => void;
   /**
    * Fired on every content change.
    * @param html       HTML serialization of the current content.
@@ -149,6 +151,10 @@ export interface LexicalEditorInstance {
    * Accepts: serialized JSON string, JSON object, HTML string, or Markdown string.
    */
   setContent: (editorState: string | object) => void;
+  /** Dispatch Lexical's CLEAR_HISTORY_COMMAND from this bundle's runtime. */
+  clearHistory: () => void;
+  /** Close built-in dialogs without recreating the editor. */
+  closeDialogs: () => void;
   /** Returns the underlying Lexical editor instance. */
   getEditor: () => LexicalEditor | null;
 }

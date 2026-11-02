@@ -22,15 +22,22 @@ const ACCEPTABLE_IMAGE_TYPES = [
 
 export const DragDropPasteExtension = defineExtension({
   name: '@lexical/playground/DragDropPaste',
-  register: (editor) =>
-    editor.registerCommand(
+  config: {
+    // Optional observation only: the host decides whether saving waits for import.
+    onImport: undefined as ((task: Promise<void>, cancel: () => void) => void) | undefined,
+  },
+  register: (editor, config, state) => {
+    const signal = state.getSignal();
+    return editor.registerCommand(
       DRAG_DROP_PASTE,
       (files) => {
-        (async () => {
+        let cancelled = false;
+        const task = (async (): Promise<void> => {
           const filesResult = await mediaFileReader(
             files,
             [ACCEPTABLE_IMAGE_TYPES].flatMap((x) => x),
           );
+          if (cancelled || signal.aborted) return;
           for (const {file, result} of filesResult) {
             if (isMimeType(file, ACCEPTABLE_IMAGE_TYPES)) {
               editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
@@ -40,8 +47,12 @@ export const DragDropPasteExtension = defineExtension({
             }
           }
         })();
+        // Cancellation suppresses insertion; mediaFileReader itself is not abortable.
+        void task.catch(console.error);
+        config.onImport?.(task, () => { cancelled = true; });
         return true;
       },
       COMMAND_PRIORITY_LOW,
-    ),
+    );
+  },
 });

@@ -15,6 +15,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -190,18 +191,66 @@ export default function DropDown({
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const button = buttonRef.current;
     const dropDown = dropDownRef.current;
-    const zoom = calculateZoomLevel(dropDown, true);
-    if (showDropDown && button !== null && dropDown !== null) {
-      const {top, left} = button.getBoundingClientRect();
-      dropDown.style.top = `${top / zoom + button.offsetHeight + dropDownPadding}px`;
-      dropDown.style.left = `${
-        Math.min(left, window.innerWidth - dropDown.offsetWidth - 20) / zoom
-      }px`;
+    if (!showDropDown || button === null || dropDown === null) {
+      return;
     }
-  }, [dropDownRef, buttonRef, showDropDown]);
+
+    const updatePosition = (): void => {
+      const {bottom, left, right} = button.getBoundingClientRect();
+      // Measure the fixed positioning space itself. In legacy Chromium with
+      // CSS zoom, innerWidth and client rects need not use the same units.
+      // The menu has intrinsic width, so moving it between the two edges
+      // measures the available space without changing its dimensions.
+      dropDown.style.top = '0px';
+      dropDown.style.left = '0px';
+      dropDown.style.right = 'auto';
+      const originRect = dropDown.getBoundingClientRect();
+      // Calibrate CSS offsets using an actual movement rather than inferring
+      // them from offsetWidth/offsetHeight or the browser's zoom convention.
+      dropDown.style.top = '100px';
+      dropDown.style.left = '100px';
+      const offsetRect = dropDown.getBoundingClientRect();
+      const scaleX = (offsetRect.left - originRect.left) / 100 || 1;
+      const scaleY = (offsetRect.top - originRect.top) / 100 || 1;
+      const dropDownWidth = originRect.width / scaleX;
+
+      dropDown.style.left = 'auto';
+      dropDown.style.right = '0px';
+      const rightEdge = dropDown.getBoundingClientRect().right;
+      const availableWidth = (rightEdge - originRect.left) / scaleX;
+
+      // Both rects share the body's zoom. Only correct additional zoom on
+      // the button's ancestors when the engine returns unscaled rects.
+      const relativeRectZoom =
+        calculateZoomLevel(button) / calculateZoomLevel(dropDown);
+      const buttonLeft = (left * relativeRectZoom - originRect.left) / scaleX;
+      const buttonRight = (right * relativeRectZoom - originRect.left) / scaleX;
+      const maxLeft = Math.max(0, availableWidth - dropDownWidth - 20);
+      // Flip to the trigger's right edge on overflow. Clamping every menu
+      // directly to maxLeft would make later toolbar menus share a position.
+      const alignedLeft =
+        buttonLeft > maxLeft ? buttonRight - dropDownWidth : buttonLeft;
+      dropDown.style.right = 'auto';
+      dropDown.style.top = `${
+        (bottom * relativeRectZoom - originRect.top) / scaleY + dropDownPadding
+      }px`;
+      dropDown.style.left = `${Math.max(0, Math.min(alignedLeft, maxLeft))}px`;
+    };
+
+    updatePosition();
+    // Capture scroll events from nested containers, including horizontal
+    // toolbar scrolling, and use the same zoom conversion on every update.
+    document.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      document.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showDropDown]);
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -234,28 +283,6 @@ export default function DropDown({
       };
     }
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
-
-  useEffect(() => {
-    const handleButtonPositionUpdate = () => {
-      if (showDropDown) {
-        const button = buttonRef.current;
-        const dropDown = dropDownRef.current;
-        if (button !== null && dropDown !== null) {
-          const {top} = button.getBoundingClientRect();
-          const newPosition = top + button.offsetHeight + dropDownPadding;
-          if (newPosition !== dropDown.getBoundingClientRect().top) {
-            dropDown.style.top = `${newPosition}px`;
-          }
-        }
-      }
-    };
-
-    document.addEventListener('scroll', handleButtonPositionUpdate);
-
-    return () => {
-      document.removeEventListener('scroll', handleButtonPositionUpdate);
-    };
-  }, [buttonRef, dropDownRef, showDropDown]);
 
   const handleOnClick = (e: React.MouseEvent) => {
     setShowDropDown(!showDropDown);

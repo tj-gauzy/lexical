@@ -6,7 +6,6 @@
  *
  */
 
-
 .editor-shell {
   margin: 20px auto;
   border-radius: 2px;
@@ -789,6 +788,7 @@ body > .dropdown {
   z-index: 100;
   display: block;
   position: fixed;
+  width: max-content;
   box-shadow:
     0 12px 28px 0 rgba(0, 0, 0, 0.2),
     0 2px 4px 0 rgba(0, 0, 0, 0.1),

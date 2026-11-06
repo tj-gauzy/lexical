@@ -162,7 +162,7 @@ export default function Editor({plugins = {}, extraRender = false, children = nu
   const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
-      ? 'Enter some rich text...'
+      ? 'Enter your notes...'
       : 'Enter some plain text...';
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
